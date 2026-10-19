@@ -1,0 +1,46 @@
+#!/bin/sh
+# Locate GSL and write src/Makevars.
+#
+# GSL supplies Tricomi's U(a, b, z) for the confluent hypergeometric family.
+# src/ch.cpp is compiled into the package's single shared object, so GSL is
+# required to install the package at all. See configure.win for Windows.
+
+GSL_CONFIG=${GSL_CONFIG:-gsl-config}
+
+if ! "${GSL_CONFIG}" --version > /dev/null 2>&1; then
+  cat <<'EOF' >&2
+------------------------------ ERROR --------------------------------
+Cannot run gsl-config, so the GNU Scientific Library was not found.
+
+SSGGP REQUIRES GSL to build. It supplies Tricomi's U(a,b,z), which the
+confluent hypergeometric (CH) covariance family is written in terms of.
+
+  HPC module systems : module load gsl
+  Debian/Ubuntu      : apt-get install libgsl-dev
+  Fedora/RHEL        : dnf install gsl-devel
+  macOS (Homebrew)   : brew install gsl
+
+If gsl-config is installed somewhere off PATH, point at it directly:
+
+  R CMD INSTALL --configure-vars='GSL_CONFIG=/path/to/gsl-config' .
+---------------------------------------------------------------------
+EOF
+  exit 1
+fi
+
+GSL_CFLAGS=$("${GSL_CONFIG}" --cflags)
+GSL_LIBS=$("${GSL_CONFIG}" --libs)
+
+# rpath, so the .so finds libgsl in batch jobs that do not load the module
+GSL_PREFIX=$("${GSL_CONFIG}" --prefix)
+if [ -d "${GSL_PREFIX}/lib" ]; then
+  GSL_LIBS="${GSL_LIBS} -Wl,-rpath,${GSL_PREFIX}/lib"
+fi
+
+echo "SSGGP: using GSL $(${GSL_CONFIG} --version) from ${GSL_PREFIX}"
+
+sed -e "s|@GSL_CFLAGS@|${GSL_CFLAGS}|" \
+    -e "s|@GSL_LIBS@|${GSL_LIBS}|" \
+    src/Makevars.in > src/Makevars
+
+exit 0

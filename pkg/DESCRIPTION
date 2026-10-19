@@ -1,0 +1,36 @@
+Package: SSGGP
+Title: Sparse Spectral Graphical Gaussian Processes
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Anonymous", "Authors", email = "anonymous@example.invalid",
+           role = c("aut", "cre")))
+Description: Penalized likelihood inference for highly-multivariate Gaussian
+    processes via random Fourier features and sparse spectral graphical
+    modelling. Provides simulation, estimation and prediction for a model in
+    which process-level conditional independence is encoded as zeros in the
+    inverse cross-spectral density. Estimation uses a stochastic approximation
+    EM algorithm with a graphical LASSO penalty, with a coordinate-wise
+    expectation/conditional-maximization update for the process-specific
+    spectral parameters.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Depends:
+    R (>= 4.1)
+Imports:
+    Matrix,
+    Rcpp,
+    glasso,
+    fields,
+    stats,
+    methods
+LinkingTo:
+    Rcpp,
+    RcppEigen
+SystemRequirements: GNU GSL
+Suggests:
+    RhpcBLASctl,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
+Config/roxygen2/version: 8.0.0

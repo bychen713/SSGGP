@@ -1,0 +1,95 @@
+--- a/src/spiox.cpp	2026-10-18 20:35:53.128049080 -0400
++++ b/src/spiox.cpp	2026-10-18 20:35:53.220049352 -0400
+@@ -45,7 +45,9 @@
+   bounds_all.row(0) = arma::rowvec({.3, 200}); // phi
+   bounds_all.row(1) = arma::rowvec({1e-6, 100}); // sigma
+   if(matern){
+-    bounds_all.row(2) = arma::rowvec({1e-5, 2.1}); // nu  
++    // Mixed-family simulations include Matern smoothness up to about 2.5.
++    // MAT_NU_MAX=3 in covariance.h supports values strictly below 3.
++    bounds_all.row(2) = arma::rowvec({1e-5, 2.9}); // nu
+   } else {
+     // power exponential
+     bounds_all.row(2) = arma::rowvec({1, 2}); // nu
+@@ -1286,21 +1288,6 @@
+   // precompute stuff in parallel so we can do fast sequential sampling after
+   int nfill = rows_with_missing.n_elem;
+   arma::mat mvnorm = arma::randn(q, nfill);
+-  
+-  // for numerical stability --
+-  arma::vec col_sd(q);
+-  arma::vec col_mean(q); // residual mean, should be ~0 but just in case
+-  
+-  for(int j = 0; j < q; j++){
+-    arma::uvec av = avail_by_outcome(j);
+-    // residuals for available observations
+-    arma::vec resid_j = Y(av, arma::uvec({(unsigned)j})) - 
+-      X.rows(av) * B.col(j);
+-    col_sd(j) = arma::stddev(resid_j);
+-    col_mean(j) = arma::mean(resid_j);
+-    if(col_sd(j) < 1e-10) col_sd(j) = 1.0;
+-  }
+-  // 
+ 
+   arma::field<arma::mat> Hw(nfill);
+   arma::field<arma::mat> Rw(nfill);
+@@ -1344,12 +1331,13 @@
+     int i = rows_with_missing(ix);
+     arma::uvec mblanket = daggps[0].mblanket(i);
+     arma::mat YXB_others = YXB.rows(mblanket);
++    const arma::rowvec xb_i = X.row(i) * B;
+     
+     arma::uvec which_missing = arma::find(missing_mat.row(i) == 1);
+     if(which_missing.n_elem == q){
+       // everything missing!
+       arma::mat meancomp = invcholP(ix) * Hw(ix) * arma::vectorise( YXB_others );
+-      Y.row(i) = arma::trans(invcholP(ix).t() * (meancomp + rnormq)) + X.row(i) * B;
++      Y.row(i) = arma::trans(invcholP(ix).t() * (meancomp + rnormq)) + xb_i;
+     } else {
+       // some data available at this location
+       arma::mat joint_cov = invcholP(ix).t() * invcholP(ix);
+@@ -1369,24 +1357,17 @@
+         HmatT.t() * (Yall(which_availab) - joint_mean(which_availab)) + 
+         cholRmat * rnormq(which_missing);
+       
+-      Y.row(i) = Yall.t() + X.row(i) * B;
+-    }
+-    
+-    // for numerical stability 
+-    for(unsigned jj = 0; jj < which_missing.n_elem; jj++){
+-      unsigned j = which_missing(jj);
+-      // fitted value for this observation and outcome
+-      double fitted_ij = arma::dot(X.row(i), B.col(j));
+-      double lo = fitted_ij + col_mean(j) - 3.0 * col_sd(j);
+-      double hi = fitted_ij + col_mean(j) + 3.0 * col_sd(j);
+-      double val = Y(i, j);
+-      Y(i, j) = val < lo ? lo : (val > hi ? hi : val);
++      // Leave the observed responses unchanged, including roundoff.
++      for(unsigned jj = 0; jj < which_missing.n_elem; jj++){
++        unsigned j = which_missing(jj);
++        Y(i, j) = Yall(j) + xb_i(j);
++      }
+     }
+-    
++
++    // Subsequent Gibbs updates must condition on this newly sampled row.
++    // Keep the Gaussian draw unbounded; clipping would change its law.
++    YXB.row(i) = Y.row(i) - xb_i;
+   }
+-  
+-  YXB = Y - X*B;
+-  
+ }
+ 
+ void SpIOX::update_BWSigma_px(){
+--- a/src/spiox.h	2026-10-18 20:35:53.128049080 -0400
++++ b/src/spiox.h	2026-10-18 20:35:53.220049352 -0400
+@@ -326,7 +326,7 @@
+     
+     // intercept? 
+     intercept = -1;
+-    for(int j=0; j<q; j++){
++    for(int j=0; j<p; j++){
+       if(arma::all(X.col(j) == 1.0)){
+         intercept = j;
+         break;

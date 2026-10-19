@@ -1,0 +1,9 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^figures
+^data
+^simulations
+^application
+^other_code
+^testing
+^\.vscode

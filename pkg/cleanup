@@ -1,0 +1,3 @@
+#!/bin/sh
+# Remove the files ./configure and ./configure.win generate.
+rm -f src/Makevars src/Makevars.win

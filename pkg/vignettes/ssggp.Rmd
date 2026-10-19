@@ -1,0 +1,261 @@
+---
+title: "Sparse spectral graphical Gaussian processes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Sparse spectral graphical Gaussian processes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+## The model
+
+For a $p$-variate process $\mathbf{Y}(s)$ the package models the **spectral
+density matrix** rather than the covariance directly:
+
+$$\mathbf{f}(x) = \mathbf{h}(x)\,\boldsymbol{\sigma}\,\mathbf{h}(x)^\top,
+\qquad \mathbf{h}(x) = \mathrm{diag}\big(f_j(x)\big)^{1/2}.$$
+
+Two consequences drive everything else.
+
+**Zeros in $\boldsymbol{\sigma}^{-1}$ are process-level conditional
+independence.** If $(\boldsymbol\sigma^{-1})_{jk}=0$ then $Y_j$ and $Y_k$ are
+conditionally independent given the remaining processes, everywhere in space.
+Estimating a sparse $\boldsymbol\sigma^{-1}$ therefore estimates a graph.
+
+**Each $f_j$ must integrate to one.** All marginal scale lives in
+$\boldsymbol\sigma$. A spectral density carrying its own scale would make
+$\boldsymbol\sigma$ unidentifiable, so `check_unit_integral()` exists to catch
+that before it becomes a silent problem.
+
+```{r setup}
+library(SSGGP)
+set.seed(1)
+check_unit_integral(matern_spectral, c(a = 3, nu = 1.5))
+```
+
+Note `a` is the **inverse** range: `a = 1/phi` for the usual Matérn range.
+
+## Simulating
+
+`trimat()` builds a tridiagonal precision — each process conditionally
+independent of all but its neighbours.
+
+```{r sim}
+P <- 3
+Sigma_inv <- trimat(P, diag = 2, offdiag = 1)
+graph(Sigma_inv)
+
+locs <- as.matrix(expand.grid(seq(0, 5, length = 10), seq(0, 5, length = 10)))
+out <- sim(locs, sigma_inv = Sigma_inv,
+           f_par = list(c(a = 3, nu = 1.5), c(a = 2, nu = 1.0), c(a = 4, nu = 0.8)),
+           nugget = 0.1, method = "rff", L = 500, seed = 1)
+dim(out$Y)
+```
+
+There are two generators and they are **not** interchangeable.
+
+* `method = "exact"` factorises the true covariance, so the data do not come
+  from the approximation being fitted. It covers Matérn and the squared
+  exponential; for Matérn with unequal ranges it **warns**, because the
+  $(a_j+a_k)/2$ cross-covariance it then uses is not the model.
+* `method = "rff"` is Algorithm S1 of the supplement: $O(Lp^2 + Lpn)$, works for
+  any family, and is the only feasible option once $np$ is large.
+
+The nugget is added to the simulated process in both.
+
+## Fitting
+
+```{r fit}
+f <- fit(out$Y, out$locs, rho = 0.05, nugget = "shared",
+         L = 300, MC = 20, iter = 8, lag = 1, seed = 2)
+f
+```
+
+`fit()` handles colocated and misaligned designs from the same code path: `NA`
+in `Y` marks a process unobserved at a location.
+
+```{r misaligned}
+Y_miss <- out$Y
+for (j in seq_len(P)) Y_miss[sample(nrow(Y_miss), 30), j] <- NA
+fit(Y_miss, out$locs, rho = 0.05, nugget = "by_process",
+    L = 300, MC = 20, iter = 5, lag = 1, seed = 2)
+```
+
+`nugget = "shared"` is the constrained case $d_1=\dots=d_P$; the two differ
+only in how CM2 pools residuals.
+
+## Recovering the graph
+
+```{r graph}
+graph_metrics(f, Sigma_inv)[c("TP", "FP", "FN", "TPR", "FPR", "F1")]
+```
+
+Rates are computed over the **off-diagonal upper triangle**, so each edge counts
+once and the diagonal — non-zero by construction — cannot inflate them. A rate
+whose denominator is empty is `NA`, not `0`: a method that detects nothing has
+undefined precision, and reporting zero would make it look perfect.
+
+## Predicting
+
+```{r predict}
+pred <- predict(f, out$locs[1:20, ], L = 300, MC = 200, seed = 3)
+pred
+```
+
+By default only the **block diagonal** of the predictive covariance is formed:
+the marginal variances plus the $p\times p$ block per location. That is all any
+downstream quantity uses, and at realistic scale the dense
+$(n_{\text{test}}p)^2$ matrix runs to hundreds of megabytes. Pass
+`summarise = "full"` if cross-location covariances are genuinely wanted.
+The predictive mean (and `draws`, when retained) is the posterior latent field
+$A_*W$. The covariance summaries additionally include the fitted nugget on
+their diagonals, so they quantify uncertainty for a new noisy observation.
+
+`var_sum()` gives $\mathrm{Var}\!\left(\sum_j Y_j(s)\right)$, which uses the
+off-diagonal blocks — so it is *not* the sum of the marginal variances, and that
+gap is precisely the cross-process dependence.
+
+```{r varsum}
+c(var_of_sum = mean(var_sum(pred)), sum_of_marginals = sum(colMeans(pred$var)))
+```
+
+## Choosing the penalty
+
+```{r bic}
+sel <- ssggp_bic(out$Y, out$locs, rho = c(0.01, 0.05, 0.2),
+                 n = nrow(out$Y), L_ll = 300, seed_ll = 1,
+                 L = 200, MC = 10, iter = 4, lag = 1, seed = 2)
+sel$table
+sel$rho
+```
+
+Every penalty is scored with the **same** features and seed, so the comparison
+is paired rather than confounded with Monte Carlo variation between fits. The
+likelihood is a Monte Carlo estimate: it varies with `seed` and settles as `L`
+grows, so comparisons must hold both fixed. The BIC counts only the selected
+edges, since the other parameters have the same dimension for every penalty.
+
+## The independent baseline
+
+```{r ind}
+fit_independent(out$Y, out$locs, par_init = c(1, 2, 1, 0.07))
+```
+
+Each process fitted alone, so $\boldsymbol\sigma$ is diagonal by construction.
+This is the reference for asking whether joint modelling buys anything — theory
+suggests it may not for colocated data, but should when observations are
+misaligned.
+
+## Adding a spectral family
+
+`f_fun` accepts a registered name, a raw density function, or a list of length
+`p` mixing the two. A raw function is enough for simulation and prediction, but
+estimation needs the parameter names and the box CM3 optimises in:
+
+```{r registry}
+list_spectral()
+try(fit(out$Y, out$locs, f_fun = matern_spectral,
+        L = 50, MC = 4, iter = 1, seed = 1))
+```
+
+Register the family and it works everywhere, including mixed across processes.
+`fit()` needs only `par_names`, `par_lower` and `par_upper`. To also fit the
+family with the independent baseline `fit_independent()`, supply its
+covariance `cov_fun` and the baseline's parameter vector `theta`:
+
+```{r register, eval = FALSE}
+register_spectral(
+  name        = "custom_se",
+  f           = se_spectral,          # must integrate to one
+  par_names   = "a",
+  par_lower   = log(c(a = 0.2)),
+  par_upper   = log(c(a = 100)),
+  # for fit_independent(): theta = (variance, range, nugget)
+  cov_fun     = function(dist_mat, theta) theta[1] * exp(-(dist_mat / theta[2])^2 / 2),
+  theta_names = c("variance", "range", "nugget"),
+  to_theta    = function(par, variance, nugget) c(variance, 1 / par[["a"]], nugget),
+  from_theta  = function(theta) c(a = 1 / theta[[2]]),
+  theta_lower = log(c(0.001, 0.01, 0.001)),
+  theta_upper = log(c(100, 5, 100)))
+
+fit(Y, locs, f_fun = list("matern", "custom_se", "matern"))
+```
+
+A squared-exponential density has far lighter tails than any Matérn, so it
+needs a matching proposal:
+
+```{r se, eval = FALSE}
+fit(Y, locs, f_fun = "se", f_par = c(a = 2), g = se_proposal(a = 5))
+```
+
+Use `se_proposal()` only when *every* process is squared exponential: the
+proposal has to dominate the heaviest-tailed density in the fit, so a mixed
+Matérn/squared exponential model must keep `matern_proposal()`. The squared
+exponential density then
+underflows at frequencies the proposal reaches; `numerical_guard = "cap"`
+handles that by flooring the density at a negligible fraction of the proposal.
+
+## The confluent hypergeometric family
+
+`"ch"` is the third built-in family and the reason the package requires GSL to
+install: both its covariance and its spectral density are written in terms of
+Tricomi's $U(a,b,z)$, which `gsl_sf_hyperg_U_e` supplies.
+
+$$C(h) = \sigma\,\frac{\Gamma(\nu+\alpha)}{\Gamma(\nu)}\,
+         U\!\left(\alpha,\ 1-\nu,\ \frac{\|h\|^2}{2\beta^2}\right)$$
+
+What the parameters do is worth being precise about, because two of them look
+like Matérn's and only one behaves like it:
+
+- $\nu$ is smoothness, exactly as in Matérn — the spectral tail is
+  $\|x\|^{-2\nu-d}$ in both families, so equal $\nu$ means equal mean-square
+  differentiability.
+- $\alpha$ controls the **covariance** tail, which decays polynomially as
+  $\|h\|^{-2\alpha}$ rather than exponentially. That is the point of the
+  family: Matérn's exponential tail can decay too fast for data-sparse
+  problems.
+- $\beta$ is a range, and unlike Matérn and squared exponential it is parameterised
+  **directly** rather than as an inverse range, matching the paper.
+
+```{r ch, eval = FALSE}
+fit(Y, locs, f_fun = "ch", f_par = c(beta = 0.5, nu = 1.5, alpha = 2))
+```
+
+Three practical consequences:
+
+**Three spectral parameters**, where Matérn has two — so a global
+`lower`/`upper` cannot serve a mixed fit. Leave them `NULL` and each process
+uses its own family's bounds.
+
+**$\alpha > d/2$ is the model's constraint, not a numerical one.** Below it the
+spectral density is not finite at the origin and there is nothing to draw
+features from. The registered lower bound of $1.01$ assumes $d = 2$; for other
+dimensions pass `lower` to `fit()`.
+
+**No exact simulation.** There is no closed form for the transform of
+$\sqrt{f_jf_k}$ in this family, so `sim(method = "exact")` errors and names the
+family. Use `method = "rff"`, which is exact for the model at any parameter
+values:
+
+```{r chsim, eval = FALSE}
+sim(locs, sigma_inv = trimat(3, 2, 1), f_fun = "ch",
+    f_par = c(beta = 0.5, nu = 1.5, alpha = 2), method = "rff", L = 500)
+```
+
+Keep `matern_proposal()` here: CH tails are polynomial, so `se_proposal()`
+cannot dominate them.
+
+## Threads and reproducibility
+
+CM3 is a sequential sweep over processes, so a fit runs in one R process.
+`threads` caps BLAS and OpenMP for the duration of a call and restores them
+afterwards; OpenMP is used only for the CH density in CM3. Set a session-wide
+budget with `ssggp_threads(5)`, or pass `threads = NULL` to leave the settings
+alone when a scheduler script already exports them.
+
+Given a `seed`, a fit is reproducible run to run, and the compiled kernels
+return the same result at any thread count.

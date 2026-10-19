@@ -1,0 +1,60 @@
+# Personal, editor, and local tool state
+.aws/
+.agents/
+.claude/
+.codex/
+.git-linked-backup
+*.jsonl
+.Rhistory
+.Rproj.user/
+
+# R and compiled build artifacts
+*.o
+*.so
+*.dll
+*.tar.gz
+pkg/src/Makevars
+pkg/src/Makevars.win
+pkg/vignettes/*.html
+renv/library/
+renv/staging/
+
+# Logs and scheduler artifacts
+*.log
+*.out
+slurm-*.out
+Rplots.pdf
+*.aux
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Generated simulation inputs and results (written under paper/)
+data/
+output/
+paper/sim/settings_local.R
+
+# Generated MERRA inputs, fits, checkpoints, summaries, and figures
+paper/MERRA/**/data/
+paper/MERRA/**/raw/
+paper/MERRA/**/output/
+paper/MERRA/**/outputs/
+paper/MERRA/**/checkpoints/
+paper/MERRA/**/logs/
+paper/MERRA/**/figures/
+paper/MERRA/**/*.rds
+paper/MERRA/**/*.RData
+paper/MERRA/**/*.nc4
+paper/MERRA/**/*.csv
+paper/MERRA/**/*.tsv
+paper/MERRA/**/data_manifest.txt
+paper/MERRA/settings_local.R
+
+# Generated baseline-method artifacts
+paper/sim/**/output/
+
+# Figures written by the simulation summaries
+paper/sim/**/*.png
+
+# Local helper, not part of the release
+clean_venv.sh

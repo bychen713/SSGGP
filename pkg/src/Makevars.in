@@ -1,0 +1,10 @@
+# Generated into src/Makevars by ../configure, which fills in the GSL flags
+# from gsl-config.
+#
+# OpenMP is used only by the CH density map in cm3.cpp; without it the pragma
+# is ignored and the package runs serially. EIGEN_DONT_PARALLELIZE stops
+# RcppEigen from threading its own dense products whenever _OPENMP is defined,
+# which would make the Gibbs kernels' results depend on the thread count.
+PKG_CPPFLAGS = @GSL_CFLAGS@ -DEIGEN_DONT_PARALLELIZE
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS)
+PKG_LIBS     = @GSL_LIBS@ $(SHLIB_OPENMP_CXXFLAGS)

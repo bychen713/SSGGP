@@ -1,0 +1,11 @@
+
+CXX_STD = CXX14
+
+# Eigen is vendored under ext_libs/eigen (no RcppEigen dependency).
+# EIGEN_DONT_PARALLELIZE: we parallelise at the outer OpenMP level, so prevent
+# Eigen from also spawning threads inside expressions (avoids oversubscription).
+# EIGEN_NO_DEBUG: drop assertion overhead in release builds.
+PKG_CXXFLAGS = $(SHLIB_OPENMP_CXXFLAGS) -DARMA_64BIT_WORD=1 \
+               -I../ext_libs/eigen -DEIGEN_DONT_PARALLELIZE -DEIGEN_NO_DEBUG
+PKG_LIBS = $(SHLIB_OPENMP_CXXFLAGS) $(LAPACK_LIBS) $(BLAS_LIBS) $(FLIBS)
+

@@ -1,0 +1,59 @@
+#!/bin/sh
+# Windows counterpart of ./configure: locate GSL and write src/Makevars.win.
+# Tries pkg-config (Rtools40 and later ship GSL), then a LIB_GSL tree. Links
+# statically where possible, since a Windows DLL has no rpath.
+
+GSL_CFLAGS=""
+GSL_LIBS=""
+
+# --- route 1: pkg-config ----------------------------------------------------
+if pkg-config --exists gsl 2> /dev/null; then
+  GSL_CFLAGS=$(pkg-config --cflags gsl)
+  GSL_LIBS=$(pkg-config --libs gsl)
+  echo "SSGGP: using GSL $(pkg-config --modversion gsl) via pkg-config"
+fi
+
+# --- route 2: LIB_GSL -------------------------------------------------------
+if [ -z "${GSL_LIBS}" ] && [ -n "${LIB_GSL}" ]; then
+  if [ -d "${LIB_GSL}/include" ]; then
+    GSL_CFLAGS="-I\"${LIB_GSL}/include\""
+    GSL_LIBS="-L\"${LIB_GSL}/lib\${R_ARCH}\" -L\"${LIB_GSL}/lib\" -lgsl -lgslcblas"
+    echo "SSGGP: using GSL from LIB_GSL=${LIB_GSL}"
+  fi
+fi
+
+# --- neither worked ---------------------------------------------------------
+if [ -z "${GSL_LIBS}" ]; then
+  cat <<'EOF' >&2
+------------------------------ ERROR --------------------------------
+The GNU Scientific Library was not found.
+
+SSGGP REQUIRES GSL to build. It supplies Tricomi's U(a,b,z), which the
+confluent hypergeometric (CH) covariance family is written in terms of.
+
+On Windows, install it into the Rtools toolchain:
+
+  Rtools44 / Rtools43 (UCRT):
+    pacman -S mingw-w64-ucrt-x86_64-gsl
+
+  Rtools40-42 (MSVCRT):
+    pacman -S mingw-w64-x86_64-gsl
+
+Run pacman from the Rtools "MSYS2 MinGW" shell, or from a normal shell as
+
+  C:\rtools44\usr\bin\pacman.exe -S mingw-w64-ucrt-x86_64-gsl
+
+Alternatively point LIB_GSL at an existing GSL tree containing
+include\ and lib\:
+
+  set LIB_GSL=C:\path\to\gsl
+---------------------------------------------------------------------
+EOF
+  exit 1
+fi
+
+sed -e "s|@GSL_CFLAGS@|${GSL_CFLAGS}|" \
+    -e "s|@GSL_LIBS@|${GSL_LIBS}|" \
+    src/Makevars.in > src/Makevars.win
+
+exit 0

@@ -1,0 +1,13 @@
+Package: spiox
+Type: Package
+Title: Inside-out cross-covariance (IOX) for spatial multivariate data
+Version: 0.8.1
+Date: 2026-02-17
+Author: Michele Peruzzi
+Maintainer: Michele Peruzzi <peruzzi@umich.edu>
+Description: Fits Bayesian models for multivariate spatial data using IOX and Vecchia approximations of GPs.
+License: GPL (>= 2)
+Encoding: UTF-8
+RoxygenNote: 7.3.3
+Imports: Rcpp (>= 1.0.12), FNN, fields, GpGp, RhpcBLASctl
+LinkingTo: Rcpp, RcppArmadillo

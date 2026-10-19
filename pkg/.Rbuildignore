@@ -1,0 +1,6 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^src/Makevars$
+^src/Makevars\.win$
+^src/.*\.o$
+^src/.*\.so$
