@@ -7,7 +7,7 @@
 ssggp_aic(
   Y,
   locs,
-  rho = c(0, 0.005, 0.01, 0.025, 0.05, 0.1),
+  rho = c(0.005, 0.01, 0.025, 0.05, 0.1),
   L_ll = 1000,
   seed_ll = 1L,
   ...
@@ -16,7 +16,8 @@ ssggp_aic(
 \arguments{
 \item{Y, locs}{As in \code{\link[=fit]{fit()}}.}
 
-\item{rho}{Numeric vector of penalties to try.}
+\item{rho}{Numeric vector of positive penalties to try. The unpenalized fit
+(\code{rho = 0}) is not a candidate.}
 
 \item{L_ll}{Number of random Fourier features for the likelihood evaluation.}
 

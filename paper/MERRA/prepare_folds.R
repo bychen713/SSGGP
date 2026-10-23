@@ -7,9 +7,10 @@
 #   3. colocated splits    data/baseline/colocated/fold[1-3].rds
 #   4. final folds         data/{misaligned,colocated}/fold[1-3].rds
 #
-# Steps 2-3 fix the train/test locations and the misaligned mask; step 4
-# re-standardizes each process by the SD of its observed training residuals in
-# that fold. The data/baseline/ folds are intermediate.
+# Steps 2-3 fix the train/test locations and the misaligned mask. Step 4 builds
+# each fold from the raw values: offset/log10, 1000-km local-plane trend, and
+# division by the residual SD of each process, all estimated from the observed
+# training values of that fold. The data/baseline/ folds are intermediate.
 source("MERRA/settings.R")
 baseline_root <- file.path(merra_data_root, "baseline")
 final_root <- merra_data_root
@@ -119,21 +120,40 @@ local({
   cat("Prepared three colocated folds with 500 complete training locations each\n")
 })
 
-# 4. final folds: standardize by the observed training SD of each fold
-# Reuse the uncentered residuals and the baseline train/test splits. Only the
-# process-wise SD changes: estimate it from values actually observed in each
-# training fold, then apply that same SD to its training and test data.
+# 4. final folds from the raw values
+# Within each fold: offset/log10, a local-plane trend within merra_mean_bandwidth_km
+# of each location, and the residual SD of each process, all fitted to the
+# observed training values and then applied to the training and test locations.
+fit_local_plane <- function(target_xy, train_xy, train_log, observed, radius_km) {
+  fitted <- matrix(NA_real_, nrow(target_xy), ncol(train_log))
+  counts <- matrix(0L, nrow(target_xy), ncol(train_log))
+  for (i in seq_len(nrow(target_xy))) {
+    delta <- sweep(train_xy, 2L, target_xy[i, ], "-")
+    nearby <- rowSums(delta^2) < radius_km^2
+    for (j in seq_len(ncol(train_log))) {
+      use <- nearby & observed[, j]
+      counts[i, j] <- sum(use)
+      if (counts[i, j] < 5L)
+        stop("too few observed training neighbors at target ", i, ", process ", j)
+      fit <- lm.fit(cbind(1, delta[use, 1L], delta[use, 2L]), train_log[use, j])
+      if (fit$rank != 3L || !is.finite(fit$coefficients[1L]))
+        stop("invalid local plane at target ", i, ", process ", j)
+      fitted[i, j] <- fit$coefficients[1L]
+    }
+  }
+  list(fitted = fitted, counts = counts)
+}
+
 local({
   source_file <- merra_source
   full <- readRDS(source_file)
-  stopifnot(identical(dim(full$residual_log), c(2499L, merra_p)),
-            isFALSE(full$center_applied), all(is.finite(full$residual_log)),
-            all(is.finite(full$scale)), all(full$scale > 0))
+  stopifnot(identical(dim(full$raw), c(2499L, merra_p)),
+            identical(dim(full$xy_km), c(2499L, 2L)))
 
   targets <- unlist(lapply(c("misaligned", "colocated"), function(design)
     file.path(final_root, design, sprintf("fold%d.rds", 1:3))))
   if (any(file.exists(targets)))
-    stop("refusing to overwrite existing fold-SD outputs")
+    stop("refusing to overwrite existing fold outputs")
 
   for (design in c("misaligned", "colocated")) {
     out_dir <- file.path(final_root, design)
@@ -141,55 +161,60 @@ local({
     for (fold in 1:3) {
       old_file <- file.path(baseline_root, design, sprintf("fold%d.rds", fold))
       old <- readRDS(old_file)
-      stopifnot(identical(dim(old$Y_mat), c(merra_n_train, merra_p)),
-                identical(dim(old$Y_mat_test), c(merra_n_test, merra_p)),
-                length(old$train_index) == 500L,
-                length(old$test_index) == 200L,
-                identical(dim(old$masked_train), c(merra_n_train, merra_p)))
-      r_train <- full$residual_log[old$train_index, , drop = FALSE]
-      r_test <- full$residual_log[old$test_index, , drop = FALSE]
-      old_expected <- sweep(r_train, 2L, full$scale, "/")
-      old_expected[old$masked_train] <- NA_real_
-      stopifnot(isTRUE(all.equal(unname(old$Y_mat), unname(old_expected),
-                                 tolerance = 1e-12)),
-                isTRUE(all.equal(unname(old$Y_mat_test),
-                                 unname(sweep(r_test, 2L, full$scale, "/")),
-                                 tolerance = 1e-12)))
-      if (design == "colocated") stopifnot(!any(old$masked_train))
-      if (design == "misaligned")
-        stopifnot(all(colSums(!old$masked_train) == 300L))
+      observed <- !old$masked_train
+      train_raw <- full$raw[old$train_index, , drop = FALSE]
+      test_raw <- full$raw[old$test_index, , drop = FALSE]
+      stopifnot(identical(dim(train_raw), c(merra_n_train, merra_p)),
+                identical(dim(test_raw), c(merra_n_test, merra_p)),
+                identical(dim(observed), c(merra_n_train, merra_p)),
+                !any(old$train_index %in% old$test_index))
+      if (design == "colocated") stopifnot(all(observed))
 
-      observed <- r_train
-      observed[old$masked_train] <- NA_real_
-      fold_sd <- apply(observed, 2L, sd, na.rm = TRUE)
-      stopifnot(length(fold_sd) == merra_p,
-                all(is.finite(fold_sd)), all(fold_sd > 0))
-      y_train <- sweep(r_train, 2L, fold_sd, "/")
-      y_train[old$masked_train] <- NA_real_
-      y_test <- sweep(r_test, 2L, fold_sd, "/")
-      stopifnot(all(abs(apply(y_train, 2L, sd, na.rm = TRUE) - 1) < 1e-10),
-                all(is.finite(y_test)))
+      offset <- vapply(seq_len(merra_p), function(j) {
+        positive <- train_raw[observed[, j], j]
+        positive <- positive[positive > 0]
+        if (!length(positive)) stop("no positive training value for process ", j)
+        min(positive) / 2
+      }, numeric(1))
+      train_log <- log10(sweep(train_raw, 2L, offset, "+"))
+      test_log <- log10(sweep(test_raw, 2L, offset, "+"))
+      train_xy <- full$xy_km[old$train_index, , drop = FALSE]
+      test_xy <- full$xy_km[old$test_index, , drop = FALSE]
+      train_trend <- fit_local_plane(train_xy, train_xy, train_log, observed,
+                                     merra_mean_bandwidth_km)
+      test_trend <- fit_local_plane(test_xy, train_xy, train_log, observed,
+                                    merra_mean_bandwidth_km)
+      train_resid <- train_log - train_trend$fitted
+      test_resid <- test_log - test_trend$fitted
+      observed_resid <- train_resid
+      observed_resid[!observed] <- NA_real_
+      fold_sd <- apply(observed_resid, 2L, sd, na.rm = TRUE)
+      stopifnot(all(is.finite(fold_sd)), all(fold_sd > 0))
+      y_train <- sweep(train_resid, 2L, fold_sd, "/")
+      y_train[!observed] <- NA_real_
+      y_test <- sweep(test_resid, 2L, fold_sd, "/")
+      stopifnot(all(is.finite(y_train[observed])), all(is.finite(y_test)),
+                max(abs(apply(y_train, 2L, sd, na.rm = TRUE) - 1)) < 1e-10)
 
       new <- old
       new$Y_mat <- y_train
       new$Y_mat_test <- y_test
+      new$training_offset <- offset
       new$training_observed_sd <- fold_sd
-      new$full_grid_sd_not_used <- full$scale
+      new$training_local_trend <- train_trend$fitted
+      new$test_local_trend <- test_trend$fitted
+      new$train_neighbor_count <- train_trend$counts
+      new$test_neighbor_count <- test_trend$counts
       new$source_fold_file <- old_file
       new$source_fold_md5 <- unname(tools::md5sum(old_file))
       new$source_md5 <- unname(tools::md5sum(source_file))
       new$preprocessing <- paste(
-        "process-specific offset/log10 -> full-grid 1000-km local-plane removal",
-        "-> divide by process SD of observed training residuals in this fold;",
-        "no global centering")
-      if (design == "colocated") {
-        new$source_misaligned_file <- file.path(final_root, "misaligned",
-                                                 sprintf("fold%d.rds", fold))
-        new$source_misaligned_md5 <- unname(tools::md5sum(new$source_misaligned_file))
-      }
+        "offset/log10, 1000-km local-plane trend and process SD, each estimated",
+        "from the observed training values of this fold; no global centering")
       saveRDS(new, file.path(out_dir, sprintf("fold%d.rds", fold)))
-      cat(design, "fold", fold, "observed/process",
-          unique(colSums(!old$masked_train)), "SD range", range(fold_sd), "\n")
+      cat(design, "fold", fold, "min neighbors",
+          min(c(train_trend$counts, test_trend$counts)), "SD range",
+          range(fold_sd), "\n")
     }
   }
 })

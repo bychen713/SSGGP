@@ -1,7 +1,7 @@
 Package: spiox
 Type: Package
 Title: Inside-out cross-covariance (IOX) for spatial multivariate data
-Version: 0.8.1
+Version: 0.8.1.9001
 Date: 2026-02-17
 Author: Michele Peruzzi
 Maintainer: Michele Peruzzi <peruzzi@umich.edu>

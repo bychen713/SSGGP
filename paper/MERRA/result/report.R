@@ -95,26 +95,33 @@ write_matrix_figures <- function(full, figure_dir) {
                   width = 15, height = 13, dpi = 300)
 }
 
-# Compare raw concentrations with fold-1 processed values over the same grid.
+# Compare raw concentrations on the full grid with the processed values of
+# colocated fold 1 at its training and test locations.
 write_data_maps <- function(full, figure_dir) {
   fold <- readRDS(file.path(merra_data_root, "colocated", "fold1.rds"))
   processes <- unique(c(1L, ceiling(merra_p / 2), merra_p))
-  processed <- sweep(full$residual_log, 2L, fold$training_observed_sd, "/")
+  fold_index <- c(fold$train_index, fold$test_index)
+  processed <- rbind(fold$Y_mat, fold$Y_mat_test)
   processed_limit <- max(abs(processed[, processes, drop = FALSE]))
   world <- ggplot2::map_data("world")
   make_panel <- function(j, raw) {
-    d <- data.frame(lon = full$coords[, 1L], lat = full$coords[, 2L],
+    rows <- if (raw) seq_len(nrow(full$coords)) else fold_index
+    d <- data.frame(lon = full$coords[rows, 1L], lat = full$coords[rows, 2L],
                     value = if (raw) full$raw[, j] else processed[, j])
     plot <- ggplot2::ggplot(d, ggplot2::aes(lon, lat, fill = value)) +
       ggplot2::geom_raster() +
       ggplot2::geom_path(data = world, ggplot2::aes(long, lat, group = group),
                          inherit.aes = FALSE, colour = "grey45", linewidth = 0.25) +
-      ggplot2::coord_quickmap(xlim = range(d$lon), ylim = range(d$lat), expand = FALSE) +
+      ggplot2::coord_quickmap(xlim = range(full$coords[, 1L]),
+                              ylim = range(full$coords[, 2L]), expand = FALSE) +
       ggplot2::labs(title = full$process_names[j], x = "Longitude", y = "Latitude",
-                     subtitle = if (raw) "Raw concentration" else "Processed (colocated fold 1 SD)",
+                     subtitle = if (raw) "Raw concentration" else "Processed (colocated fold 1)",
                      fill = if (raw) "kg/kg" else "Standardized\nlog residual") +
       ggplot2::theme_bw(base_size = 11) +
-      ggplot2::theme(panel.grid = ggplot2::element_blank())
+      ggplot2::theme(panel.grid = ggplot2::element_blank(),
+                     # grey marks locations outside the fold in processed maps
+                     panel.background = ggplot2::element_rect(
+                       fill = if (raw) "white" else "grey80", colour = NA))
     if (raw) {
       trans <- scales::pseudo_log_trans(sigma = full$offset[j], base = 10)
       breaks <- trans$inverse(seq(trans$transform(min(d$value)),

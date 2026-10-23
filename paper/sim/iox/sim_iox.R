@@ -27,7 +27,9 @@ stopifnot(setting %in% settings, stage %in% c("estimate", "predict", "validate")
           !anyNA(c(fold, mcmc, m_nn, threads, n_keep)), fold %in% 1:15,
           mcmc >= 8L, m_nn >= 1L, threads >= 1L, n_keep >= 2L, n_keep <= mcmc)
 if (!requireNamespace("spiox", quietly = TRUE) ||
-    utils::packageVersion("spiox") < "0.8.1") stop("Local spiox 0.8.1 is required")
+    utils::packageVersion("spiox") != "0.8.1.9001")
+  stop("the bundled spiox 0.8.1.9001 is required; install it with ",
+       "`bash setup_env.sh --with-iox` from the repository root")
 package_path <- normalizePath(find.package("spiox"))
 package_version <- as.character(utils::packageVersion("spiox"))
 package_dll <- system.file("libs", paste0("spiox", .Platform$dynlib.ext), package = "spiox")
@@ -145,25 +147,26 @@ if (stage == "validate") {
   pred_sd <- apply(draws, c(1L, 2L), stats::sd)
   sum_draws <- apply(draws, c(1L, 3L), sum)
   sum_mean <- rowMeans(sum_draws)
-  sum_sd <- apply(sum_draws, 1L, stats::sd)
+  # 95% intervals from the 2.5% and 97.5% posterior predictive quantiles.
+  q <- function(x, prob) stats::quantile(x, prob, type = 7, names = FALSE)
+  lo <- apply(draws, c(1L, 2L), q, 0.025); hi <- apply(draws, c(1L, 2L), q, 0.975)
+  lo_sum <- apply(sum_draws, 1L, q, 0.025); hi_sum <- apply(sum_draws, 1L, q, 0.975)
+  covered <- Y_out >= lo & Y_out <= hi
+  covered_sum <- rowSums(Y_out) >= lo_sum & rowSums(Y_out) <= hi_sum
   metrics <- list(
     norm = mean(sqrt(rowSums((Y_out - pred_mean)^2))),
-    coverage = mean(abs(Y_out - pred_mean) <= 1.96 * pred_sd),
-    coverage_per_process = colMeans(abs(Y_out - pred_mean) <= 1.96 * pred_sd),
+    coverage = mean(covered), coverage_per_process = colMeans(covered),
     rmse_sum = sqrt(mean((rowSums(Y_out) - sum_mean)^2)),
-    coverage_sum = mean(abs(rowSums(Y_out) - sum_mean) <= 1.96 * sum_sd),
-    # Arithmetic mean pointwise width, matching draft.tex. RMS widths are
-    # retained under explicit names for comparison with older stored metrics.
-    pi_length = 3.92 * mean(pred_sd), pi_length_per_process = 3.92 * colMeans(pred_sd),
-    pi_length_sum = 3.92 * mean(sum_sd), pi_length_rms = 3.92 * sqrt(mean(pred_sd^2)),
-    pi_length_sum_rms = 3.92 * sqrt(mean(sum_sd^2)),
+    coverage_sum = mean(covered_sum),
+    pi_length = mean(hi - lo), pi_length_per_process = colMeans(hi - lo),
+    pi_length_sum = mean(hi_sum - lo_sum),
     initialization_minutes = unname(saved$initialization_elapsed["elapsed"]) / 60,
     estimate_minutes = unname(saved$elapsed["elapsed"]) / 60,
     total_estimate_minutes = (unname(saved$initialization_elapsed["elapsed"]) + unname(saved$elapsed["elapsed"])) / 60,
     predict_minutes = unname(elapsed["elapsed"]) / 60)
   saveRDS(c(list(draws = draws, mean = pred_mean, sd = pred_sd, metrics = metrics,
                  elapsed = elapsed, fit_file = fit_file, keep = keep,
-                 pi_length_definition = "3.92 times arithmetic mean of pointwise posterior SD"),
+                 interval = "2.5% and 97.5% posterior predictive quantiles"),
             metadata), pred_file, compress = FALSE)
   cat("Saved predictions:", pred_file, "\n")
   print(metrics)

@@ -13,6 +13,7 @@ fit(
   rho = 0.05,
   nugget = c("shared", "by_process"),
   nugget_init = 0.07,
+  sigma_inv_init = NULL,
   L = 300,
   MC = 50,
   burnin = NULL,
@@ -62,6 +63,10 @@ differ, because the random-feature likelihood itself changes with \code{L}.}
 \item{nugget}{One of \code{"shared"} or \code{"by_process"}.}
 
 \item{nugget_init}{Starting nugget variance.}
+
+\item{sigma_inv_init}{Optional \code{P} by \code{P} starting value for
+\eqn{\sigma^{-1}}, symmetric positive definite. \code{NULL} uses the default
+described under Details.}
 
 \item{L}{Number of random Fourier features.}
 
@@ -153,9 +158,9 @@ the previous iteration's final state; the stochastic-approximation update of
 the per-feature second moments \eqn{u_\ell} and of the nugget; CM1 (graphical
 LASSO for \eqn{\sigma^{-1}}); CM2 (nugget); and CM3, a sequential
 coordinate-wise update of each process's spectral parameters with the others
-held at their current values. Starting values: \eqn{\sigma^{-1}} is the
-inverse sample covariance when the data are colocated and the identity
-otherwise; \code{\link[=fit_independent]{fit_independent()}} is a good source of \code{f_par} and
-\code{nugget_init}.
+held at their current values. Starting values: unless \code{sigma_inv_init} is
+given, \eqn{\sigma^{-1}} is the inverse sample covariance when the data
+are colocated and the identity otherwise; \code{\link[=fit_independent]{fit_independent()}} is a good
+source of \code{f_par}, \code{nugget_init} and a diagonal \code{sigma_inv_init}.
 }
 

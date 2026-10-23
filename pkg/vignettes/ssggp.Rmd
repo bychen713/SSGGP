@@ -62,8 +62,9 @@ There are two generators and they are **not** interchangeable.
   from the approximation being fitted. It covers Matérn and the squared
   exponential; for Matérn with unequal ranges it **warns**, because the
   $(a_j+a_k)/2$ cross-covariance it then uses is not the model.
-* `method = "rff"` is Algorithm S1 of the supplement: $O(Lp^2 + Lpn)$, works for
-  any family, and is the only feasible option once $np$ is large.
+* `method = "rff"` is the simulation algorithm in the Supplementary Material:
+  $O(Lp^2 + Lpn)$, works for any family, and is the only feasible option once
+  $np$ is large.
 
 The nugget is added to the simulated process in both.
 

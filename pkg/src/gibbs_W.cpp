@@ -9,8 +9,7 @@ using Eigen::MappedSparseMatrix;
 using Sp   = Eigen::SparseMatrix<double>;
 using Chol = Eigen::SimplicialLLT<Sp, Eigen::Lower, Eigen::NaturalOrdering<int>>;
 
-// Gibbs sampler for the latent W (Supplement, Proposition S1), one feature
-// block at a time:
+// Gibbs sampler for the latent W, one feature block at a time:
 //
 //   W_l | W_-l, Y ~ N( Q_add^-1 A_l^T D^-1 (Y - A_-l W_-l),  Q_add^-1 ),
 //   Q_add = Sigma_{W_l}^-1 + A_l^T D^-1 A_l.

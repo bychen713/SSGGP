@@ -37,16 +37,22 @@ bash run_demo.sh      # runs demo.R (about a minute)
 ```
 
 Add `--with-merra` to also set up the MERRA-2 preprocessing packages (`ncdf4`,
-`sf`, `patchwork`, `maps`). After editing files under `pkg/`, reinstall with
-`bash setup_env.sh` (or `R CMD INSTALL pkg` from the repository root).
+`sf`, `patchwork`, `maps`), and `--with-iox` to install the bundled `spiox` used
+by the IOX baseline (`paper/iox/spiox`). After editing files under `pkg/`,
+reinstall with `bash setup_env.sh` (or `R CMD INSTALL pkg` from the repository
+root).
+
+After `demo.R`, the vignette `pkg/vignettes/ssggp.Rmd` gives a longer
+walkthrough: simulation, fitting, graph recovery, prediction, penalty
+selection, and adding a spectral family.
 
 ## Reproducing the paper
 
 The simulation study, the LMC and IOX baselines, and the MERRA-2 application
 live under `paper/`. Run them from that directory. See
-[`paper/README.md`](paper/README.md) for the pipeline and the mapping from
-paper figures and tables to scripts. Generated data, fitted objects, logs, and
-figures are not versioned.
+[`paper/README.md`](paper/README.md) for the pipeline and the scripts behind
+each table and figure. Generated data, fitted objects, logs, and figures are
+not versioned.
 
 ## Checking the package
 

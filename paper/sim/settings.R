@@ -19,25 +19,31 @@ library(Matrix)
 project_root <- .find_project_root()
 here <- function(...) file.path(project_root, ...)
 
-# Setting: three binary factors, taken from the environment so that one launcher
-# can run any of the eight combinations.
+# Setting: four binary factors, taken from the environment so that one launcher
+# can run any of the sixteen combinations.
 prec_structure <- Sys.getenv("SSGGP_PREC",   "random")      # tridiagonal | random
 offdiag_sign   <- Sys.getenv("SSGGP_SIGN",   "neg")         # pos | neg
 missing_TF     <- Sys.getenv("SSGGP_MISS",   "miss")       # coloc | miss
+family_design  <- Sys.getenv("SSGGP_FAMILY", "mixed")       # mixed | matern
+if (!family_design %in% c("mixed", "matern"))
+  stop("SSGGP_FAMILY must be 'mixed' or 'matern'", call. = FALSE)
 
 # Data-generating design
 P          <- as.integer(Sys.getenv("SSGGP_P", "50"))
 dim_grid   <- 25          # dim_grid^2 locations in total
 train_prop <- 0.8         # the rest is held out for prediction
-n_train    <- floor(dim_grid^2 * train_prop)   # training locations; the n in BIC
+n_train    <- floor(dim_grid^2 * train_prop)   # training locations
 n_sim      <- 15          # replicate datasets per setting
 d          <- 2           # spatial dimension
 domain_max <- 5           # locations are uniform on [0, domain_max]^2
 
 # Process families (in random order) and their true parameters. local() keeps
-# the caller's RNG state unchanged.
+# the caller's RNG state unchanged. The all-Matern design uses nu = 1.5, a = 3.
 truth_seed <- 20260811L
-truth_design <- local({
+truth_design <- if (family_design == "matern") {
+  list(family = rep("matern", P),
+       parameters = replicate(P, c(nu = 1.5, a = 3), simplify = FALSE))
+} else local({
   set.seed(truth_seed)
   family <- sample(c(rep("matern", 20), rep("ch", 20),
                      rep("se", 10)))
@@ -72,7 +78,7 @@ rho_vals <- c(0, 0.0003, 0.0006, 0.001, 0.003, 0.006, 0.012, 0.025, 0.05, 0.1)
 iter     <- 500           # maximum SAEM iterations
 cm_cycles <- 1L           # CM cycles per expensive E step
 tol      <- 1e-3          # convergence tolerance on the objective
-diag_pen <- FALSE         # penalise the diagonal in the graphical lasso
+diag_pen <- FALSE         # whether to penalise the diagonal
 nugget_type <- "shared"   # "shared" or "by_process"
 use_independent_init <- TRUE
 

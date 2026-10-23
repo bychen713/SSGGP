@@ -17,13 +17,7 @@ setup_compute()
 array_id <- job_index(1L)
 est_file <- file.path(out_dir, paste0("est", array_id, ".RData"))
 
-# A missing fit gets logLik = -Inf, so BIC selection skips it.
-if (!file.exists(est_file)) {
-  warning("no fit at ", est_file, "; recording -Inf", call. = FALSE)
-  ll_k <- -Inf; n_par <- Inf
-  save(ll_k, n_par, file = file.path(out_dir, paste0("ll_", array_id, ".RData")))
-  quit(save = "no")
-}
+if (!file.exists(est_file)) stop("missing fit: ", est_file, call. = FALSE)
 
 load(est_file)                        # result_est, time_approx
 
@@ -33,7 +27,7 @@ ll <- logLik(result_est$fit, L = L_ll, seed = seed_ll, g = proposal,
 ll_k  <- as.numeric(ll)
 n_par <- attr(ll, "df")               # = sum_{i<j} 1(eta_ij != 0)
 
-cat(sprintf("array %d | rho %g | logLik %.4f | edges %d | BIC %.4f\n",
-            array_id, result_est$rho, ll_k, n_par, -2 * ll_k + log(n_train) * n_par))
+cat(sprintf("array %d | rho %g | logLik %.4f | edges %d\n",
+            array_id, result_est$rho, ll_k, n_par))
 
 save(ll_k, n_par, file = file.path(out_dir, paste0("ll_", array_id, ".RData")))

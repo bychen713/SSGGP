@@ -11,7 +11,7 @@
 #'   factorisation, so the data are not produced by the same random Fourier
 #'   feature approximation being fitted. Cost is \eqn{O(n^3p^3)}, and only some
 #'   families have a closed form (see below).
-#' * `"rff"` is Algorithm S1 of the supplement: an `L`-term random Fourier
+#' * `"rff"` is the simulation algorithm of the paper: an `L`-term random Fourier
 #'   feature construction, \eqn{O(Lp^2 + Lpn)}, for any spectral family. The
 #'   draw is an approximation that improves with `L`.
 #'
@@ -110,7 +110,7 @@ sim <- function(locs, sigma = NULL, sigma_inv = NULL,
   list(Y = Y, locs = locs)
 }
 
-#' Algorithm S1 of the supplement
+#' Random Fourier feature simulation
 #'
 #' With \eqn{\sigma^{-1} = \Lambda\Lambda^\top}, solves
 #' \eqn{M_\ell W_\ell = Z_\ell} for \eqn{M_\ell = \Lambda^\top

@@ -103,11 +103,15 @@
   grDevices::png(path, width = 1950, height = 1500, res = 300,
                  type = "cairo")
   on.exit(grDevices::dev.off(), add = TRUE)
-  graphics::par(mar = c(5.0, 7.4, 0.7, 2.5), mgp = c(3.5, 0.75, 0),
-                las = 1)
+  # Place the y label just beyond the widest tick label.
+  label_line <- 1.6 + 0.85 * max(nchar(format(pretty(limits))))
+  graphics::par(mar = c(5.0, label_line + 2.2, 0.7, 2.5),
+                mgp = c(3.5, 0.75, 0), las = 1)
   graphics::plot(NA_real_, xlim = range(iterations), ylim = limits,
-                 xaxs = "i", xlab = "Iteration", ylab = ylab,
+                 xaxs = "i", xlab = "Iteration", ylab = "",
                  cex.axis = 1.5, cex.lab = 1.4)
+  graphics::mtext(ylab, side = 2, line = label_line, las = 0,
+                  cex = min(1.4, 1.4 * 36 / nchar(ylab)))   # long labels shrink to fit
   graphics::abline(h = pretty(limits, 4), col = "#ECECEC", lwd = 0.6)
   if (!is.null(truth) && length(truth) > 1L && diff(range(truth)) > 0)
     graphics::rect(min(iterations), min(truth), max(iterations), max(truth),
@@ -121,6 +125,8 @@
                     col = grDevices::adjustcolor("#5C7E98", alpha.f = 0.22),
                     lwd = 0.6)
   graphics::lines(iterations, center, col = "#145A86", lwd = 2.1)
+  if (length(iterations) == 1L)   # a single point draws no line
+    graphics::points(iterations, center, pch = 19, col = "#145A86")
   if (!is.null(truth))
     graphics::abline(h = mean(truth), col = "#B4413C", lty = 2, lwd = 1.8)
   graphics::box(col = "#777777")
@@ -259,7 +265,9 @@ plot_simulation_diagnostics <- function(out_dir, fig_dir, setting_name,
                    "Precision Frobenius norm")
   written <- c(written, path)
 
-  observed_iterations <- seq.int(observed_ll_every, n_iter, by = observed_ll_every)
+  # Runs shorter than observed_ll_every are evaluated at their last iteration.
+  observed_iterations <- if (n_iter >= observed_ll_every)
+    seq.int(observed_ll_every, n_iter, by = observed_ll_every) else n_iter
   values <- .collect_penalized_observed_ll(
     selected, file.path(out_dir, "diagnostics"),
     observed_iterations, L_ll, seed_ll, threads, compute_observed_ll)

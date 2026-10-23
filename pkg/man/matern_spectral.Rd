@@ -19,7 +19,7 @@ A single non-negative number, \eqn{f_j(x)}.
 The isotropic Matern spectral density on \eqn{\mathbb{R}^d}, normalised to
 integrate to one. Unit integral is required: the model puts every marginal
 scale in \eqn{\sigma}, so a spectral density carrying its own scale would
-make \eqn{\sigma} unidentifiable (see the paper, Section 3.1).
+make \eqn{\sigma} unidentifiable.
 }
 \details{
 The range is parameterised by \code{a}, the inverse range, so \code{a = 1/phi} for

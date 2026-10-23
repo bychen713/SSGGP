@@ -3,6 +3,7 @@
 #   bash setup_env.sh               # packages for the demo, simulations, and fits
 #   bash setup_env.sh --with-merra  # also the MERRA-2 preprocessing packages (ncdf4, sf,
 #                                    # patchwork, maps; need GDAL/GEOS/PROJ/udunits/netCDF)
+#   bash setup_env.sh --with-iox    # also the bundled spiox (paper/iox/spiox) for IOX
 #   bash setup_env.sh --no-system   # do not install system libraries or load modules
 set -uo pipefail
 cd "$(dirname "$0")"
@@ -22,9 +23,10 @@ RPROFILE
   echo "Wrote .Rprofile (renv activation)."
 fi
 
-SYS=1; WANT_MERRA=0
+SYS=1; WANT_MERRA=0; WANT_IOX=0
 for a in "$@"; do case "$a" in
   --with-merra)     WANT_MERRA=1;;
+  --with-iox)       WANT_IOX=1;;
   --no-system)      SYS=0;;
   *) echo "Unknown option: $a"; exit 2;; esac; done
 
@@ -44,6 +46,11 @@ if [ $SYS -eq 1 ]; then
   if command -v module >/dev/null 2>&1; then                          # ---- HPC (modules) ----
     # default: R (compilers are available by default on the node; R also stores
     #          absolute compiler paths, so sourceCpp works without a gcc module)
+    # iox: build spiox with the gcc whose C++ runtime R loads (the IOX launchers
+    #      load the same module), avoiding "GLIBCXX ... not found" at load time
+    if [ $WANT_IOX -eq 1 ]; then
+      module load gcc/8.5.0 2>/dev/null || echo "note: no 'gcc/8.5.0' module here"
+    fi
     module load r/4.4.1 2>/dev/null || module load r 2>/dev/null \
       || echo "note: could not module-load R; ensure R 4.4.x is on PATH"
     # SSGGP requires GSL at build and load time.
@@ -79,7 +86,7 @@ fi
 # Linux setups (socketSelect error in renv_graph_install).
 export RENV_CONFIG_INSTALL_JOBS=1
 export RENV_CONFIG_SANDBOX_ENABLED=FALSE   # see .Rprofile
-export ROOTS VERIFY ROOTS_MERRA
+export ROOTS VERIFY ROOTS_MERRA WANT_IOX
 Rscript -e '
 # Activate renv for this session without renv::activate(), which would rewrite
 # .Rprofile with a relative path that breaks parallel workers.
@@ -125,13 +132,32 @@ if (length(merra)) {
 # renv cannot mistake the local path for a CRAN package name.
 if (!length(bad)) {
   message("Installing SSGGP from pkg/ ...")
+  # Zip downloads can drop the executable bits that R CMD INSTALL requires.
+  Sys.chmod(c("pkg/configure", "pkg/cleanup"), "755")
   Sys.setenv(R_LIBS = paste(.libPaths(), collapse = .Platform$path.sep))
-  system2(file.path(R.home("bin"), "R"),
-          c("CMD", "INSTALL", "--preclean", paste0("--library=", shQuote(.libPaths()[1])), "pkg"))
-  if (!isTRUE(tryCatch({suppressMessages(loadNamespace("SSGGP")); TRUE}, error=function(e) FALSE))) {
+  # A failed install keeps any previous copy, so check the exit status too.
+  status <- system2(file.path(R.home("bin"), "R"),
+                    c("CMD", "INSTALL", "--preclean", paste0("--library=", shQuote(.libPaths()[1])), "pkg"))
+  if (status != 0L ||
+      !isTRUE(tryCatch({suppressMessages(loadNamespace("SSGGP")); TRUE}, error=function(e) FALSE))) {
     message("SSGGP (pkg/) failed to install -- see the compiler output above. ",
             "The usual cause is GSL not found: check that gsl-config is on PATH.")
     bad <- c(bad, "SSGGP")
+  }
+}
+
+# ---- the bundled, patched spiox (paper/iox/spiox), for the IOX baseline -----
+if (!length(bad) && Sys.getenv("WANT_IOX") == "1") {
+  message("Installing the bundled spiox from paper/iox/spiox ...")
+  tryCatch(renv::restore(packages=c("FNN", "GpGp", "RcppArmadillo"), prompt=FALSE),
+           error=function(e) message("  ", conditionMessage(e)))
+  status <- system2(file.path(R.home("bin"), "R"),
+                    c("CMD", "INSTALL", "--preclean", "--clean",
+                      paste0("--library=", shQuote(.libPaths()[1])), "paper/iox/spiox"))
+  if (status != 0L ||
+      !isTRUE(tryCatch(utils::packageVersion("spiox") == "0.8.1.9001", error=function(e) FALSE))) {
+    message("spiox (paper/iox/spiox) failed to install -- see the compiler output above.")
+    bad <- c(bad, "spiox")
   }
 }
 

@@ -3,7 +3,7 @@
 #' The isotropic Matern spectral density on \eqn{\mathbb{R}^d}, normalised to
 #' integrate to one. Unit integral is required: the model puts every marginal
 #' scale in \eqn{\sigma}, so a spectral density carrying its own scale would
-#' make \eqn{\sigma} unidentifiable (see the paper, Section 3.1).
+#' make \eqn{\sigma} unidentifiable.
 #'
 #' The range is parameterised by `a`, the inverse range, so `a = 1/phi` for
 #' the usual Matern range `phi`.
@@ -189,7 +189,7 @@ check_proposal <- function(g) {
 #' Build the per-feature scaling matrix M
 #'
 #' `M[l, j] = sqrt( g(X_l) / (2 f_j(X_l)) )`, the diagonal of
-#' \eqn{M_\ell} in Algorithm S1, so that
+#' \eqn{M_\ell} in the simulation algorithm, so that
 #' `diag(M[l, ]) %*% sigma_inv %*% diag(M[l, ])` is \eqn{\Sigma_{W_\ell}^{-1}}.
 #'
 #' @param X List of `L` frequencies, each a length-`d` numeric.

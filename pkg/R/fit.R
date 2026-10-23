@@ -29,6 +29,9 @@
 #'   differ, because the random-feature likelihood itself changes with `L`.
 #' @param nugget One of `"shared"` or `"by_process"`.
 #' @param nugget_init Starting nugget variance.
+#' @param sigma_inv_init Optional `P` by `P` starting value for
+#'   \eqn{\sigma^{-1}}, symmetric positive definite. `NULL` uses the default
+#'   described under Details.
 #' @param L Number of random Fourier features.
 #' @param MC Gibbs sweeps per E step.
 #' @param burnin Sweeps discarded at the start of each E step. Defaults to
@@ -84,10 +87,10 @@
 #' the per-feature second moments \eqn{u_\ell} and of the nugget; CM1 (graphical
 #' LASSO for \eqn{\sigma^{-1}}); CM2 (nugget); and CM3, a sequential
 #' coordinate-wise update of each process's spectral parameters with the others
-#' held at their current values. Starting values: \eqn{\sigma^{-1}} is the
-#' inverse sample covariance when the data are colocated and the identity
-#' otherwise; [fit_independent()] is a good source of `f_par` and
-#' `nugget_init`.
+#' held at their current values. Starting values: unless `sigma_inv_init` is
+#' given, \eqn{\sigma^{-1}} is the inverse sample covariance when the data
+#' are colocated and the identity otherwise; [fit_independent()] is a good
+#' source of `f_par`, `nugget_init` and a diagonal `sigma_inv_init`.
 #' @return An object of class `ssggp_fit`.
 #' @export
 fit <- function(Y, locs,
@@ -96,7 +99,7 @@ fit <- function(Y, locs,
                 g = matern_proposal(a = 7, nu = 1.25),
                 rho = 0.05,
                 nugget = c("shared", "by_process"),
-                nugget_init = 0.07,
+                nugget_init = 0.07, sigma_inv_init = NULL,
                 L = 300, MC = 50, burnin = NULL, iter = 100, lag = 15,
                 tol = 1e-1, diag_pen = FALSE,
                 lower = NULL, upper = NULL,
@@ -118,7 +121,7 @@ fit <- function(Y, locs,
     L, MC, burnin, iter, lag, cm_cycles, tol, diag_pen,
     lower, upper, threads, seed, keep_W, verbose, trace_every,
     checkpoint_file, checkpoint_every, run_until, cm3_gradient,
-    numerical_guard))
+    numerical_guard, sigma_inv_init))
 }
 
 # SAEM step size gamma_m, shared by the sufficient-statistic and nugget updates
@@ -133,7 +136,7 @@ fit_impl <- function(Y, locs, f_par, f_fun, g, rho, nugget,
                      keep_W, verbose, trace_every = 10L,
                      checkpoint_file = NULL, checkpoint_every = 25L,
                      run_until = NULL, cm3_gradient = FALSE,
-                     numerical_guard = "error") {
+                     numerical_guard = "error", sigma_inv_init = NULL) {
   Y <- as.matrix(Y); locs <- as.matrix(locs)
   n <- nrow(Y); P <- ncol(Y); d <- ncol(locs)
   validate_fit_inputs(Y, locs, L, MC, burnin, iter, rho, nugget_init,
@@ -210,6 +213,15 @@ fit_impl <- function(Y, locs, f_par, f_fun, g, rho, nugget,
   complete <- rowSums(!observed) == 0
   sigma_est <- if (any(!observed)) diag(1, P) else stats::var(Y[complete, , drop = FALSE])
   sigma_inv_est <- solve(sigma_est)
+  if (!is.null(sigma_inv_init)) {
+    sigma_inv_init <- as.matrix(sigma_inv_init)
+    if (!is.numeric(sigma_inv_init) || !identical(dim(sigma_inv_init), c(P, P)) ||
+        any(!is.finite(sigma_inv_init)) || !isSymmetric(unname(sigma_inv_init)) ||
+        inherits(try(chol(sigma_inv_init), silent = TRUE), "try-error"))
+      stop("`sigma_inv_init` must be a symmetric positive definite P x P matrix",
+           call. = FALSE)
+    sigma_inv_est <- unname(sigma_inv_init)
+  }
 
   d_cur <- rep(nugget_init, P)
   feat  <- draw_features(L, d, g)
@@ -264,7 +276,8 @@ fit_impl <- function(Y, locs, f_par, f_fun, g, rho, nugget,
     diag_pen = diag_pen, keep_W = keep_W, seed = seed,
     f_par_init = f_par, lower = lower, upper = upper, use_fast = use_fast,
     family = vapply(fam, function(e) e$name, character(1)), g_par = g$par,
-    numerical_guard = numerical_guard, cm3_gradient = cm3_gradient)
+    numerical_guard = numerical_guard, cm3_gradient = cm3_gradient,
+    sigma_inv_init = sigma_inv_init)
   completed <- 0L
   if (!is.null(checkpoint_file) && file.exists(checkpoint_file)) {
     ck <- readRDS(checkpoint_file)

@@ -4,9 +4,14 @@
 
 Download `MERRA2_400.inst3_3d_aer_Nv.20220715.nc4` from NASA GES DISC and place
 it in `MERRA/raw/`. Then, from the repository root, run
-`bash setup_env.sh --with-merra` to install `ncdf4` and `sf` (which need GDAL,
-GEOS, PROJ, udunits, and netCDF unless your R already provides them). The
-figures also need `ggplot2`, `maps`, `patchwork`, and `scales`.
+
+```bash
+bash setup_env.sh --with-merra --with-iox
+```
+
+`--with-merra` adds the preprocessing and figure packages (`ncdf4` and `sf` need
+GDAL, GEOS, PROJ, udunits, and netCDF unless your R already provides them), and
+`--with-iox` installs the bundled `spiox` for the IOX baseline.
 
 ## Layout
 

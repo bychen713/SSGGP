@@ -42,11 +42,14 @@ if (stage == "estimate") {
     file.path(merra_output_dir, "checkpoints",
       sprintf("est_fold%d_rho%d.rds", z$fold, z$rho_index)) else NULL
   t0 <- Sys.time()
-  # Default starting precision, as in the simulation: the inverse training
-  # sample covariance when colocated, the identity when misaligned.
+  # Starting precision: the inverse independent-fit variances when misaligned;
+  # the default inverse training sample covariance when colocated.
+  sigma_inv_init <- if (merra_design == "misaligned")
+    diag(1 / inp$ind$fit$variance, nrow = merra_p) else NULL
   fit <- SSGGP::fit(Y = inp$x$Y_mat, locs = inp$x$grid, f_fun = "matern",
     f_par = inp$ind$fit$f_par, g = inp$proposal, rho = merra_rho[z$rho_index],
     nugget = "by_process", nugget_init = mean(inp$ind$fit$nugget),
+    sigma_inv_init = sigma_inv_init,
     L = merra_L, MC = merra_MC, burnin = merra_burnin, iter = merra_iter,
     lag = merra_lag, tol = merra_tol, diag_pen = FALSE,
     lower = log(c(a = 0.1, nu = 0.01)), upper = log(c(a = 100, nu = 3)),
@@ -62,10 +65,13 @@ if (stage == "likelihood") {
   z <- key(index); inp <- inputs(z$fold); est <- readRDS(merra_est_file(z$fold, z$rho_index))
   ll <- logLik(est$fit, L = merra_L_ll, seed = 999L + z$fold,
                g = inp$proposal, threads = merra_threads)
+  # BIC = -2 logLik + log(n) k, with n the number of observed training values
+  # per process (300 misaligned, 500 colocated) and k the selected edges.
+  bic_n <- as.integer(round(merra_n_train * (1 - merra_missing_prop)))
+  stopifnot(all(colSums(!is.na(inp$x$Y_mat)) == bic_n))
   save_atomic(list(fold = z$fold, rho_index = z$rho_index, rho = est$rho,
-    logLik = as.numeric(ll), edges = as.integer(attr(ll, "df")),
-    # BIC = -2 logLik + log(n) k, n = training locations, k = selected edges
-    bic = -2 * as.numeric(ll) + log(merra_n_train) * attr(ll, "df")),
+    logLik = as.numeric(ll), edges = as.integer(attr(ll, "df")), BIC_n = bic_n,
+    bic = -2 * as.numeric(ll) + log(bic_n) * attr(ll, "df")),
     file.path(merra_output_dir, sprintf("ll_fold%d_rho%d.rds", z$fold, z$rho_index)))
 }
 

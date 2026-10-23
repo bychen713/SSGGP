@@ -19,15 +19,19 @@ stopifnot(j >= 1, j <= n_sim)
 rows <- which(grid_params$sim == j)
 rows_penalised <- rows[grid_params$rho[rows] != rho_vals[1]]   # drop the dense one
 
+ll_files <- file.path(out_dir, paste0("ll_", rows_penalised, ".RData"))
+if (!all(file.exists(ll_files)))
+  stop("missing likelihoods: ", paste(basename(ll_files[!file.exists(ll_files)]),
+                                      collapse = ", "), call. = FALSE)
 ll_k_all <- n_par_all <- rep(NA_real_, length(rows_penalised))
 for (i in seq_along(rows_penalised)) {
-  f <- file.path(out_dir, paste0("ll_", rows_penalised[i], ".RData"))
-  if (file.exists(f)) { load(f); ll_k_all[i] <- ll_k; n_par_all[i] <- n_par }
+  load(ll_files[i]); ll_k_all[i] <- ll_k; n_par_all[i] <- n_par
 }
 
 # BIC = -2 logLik + log(n) k, with k the number of selected edges and n the
-# number of training locations.
-BICs <- -2 * ll_k_all + log(n_train) * n_par_all
+# number of observed training values per process (300 misaligned, 500 colocated).
+bic_n <- as.integer(round(n_train * (1 - missing_prop$miss_obs_prop[1])))
+BICs <- -2 * ll_k_all + log(bic_n) * n_par_all
 if (all(!is.finite(BICs))) stop("no usable likelihood for replicate ", j)
 
 best     <- which.min(BICs)
@@ -69,6 +73,7 @@ result_final <- list(
   cov_block        = pred$cov_block,   # per-location P x P, for the sum
   var_sum          = var_sum(pred),
   BICs   = BICs,
+  BIC_n  = bic_n,
   llMCEMs = ll_k_all,
   n_par  = n_par_all,
   ll_MCEM = ll_k_all[best])

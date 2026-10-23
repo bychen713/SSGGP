@@ -84,7 +84,8 @@ loglik_impl <- function(object, L, seed, g, numerical_guard = NULL) {
 #' `seed_ll`), so the comparison is not confounded by Monte Carlo variation.
 #'
 #' @param Y,locs As in [fit()].
-#' @param rho Numeric vector of penalties to try.
+#' @param rho Numeric vector of positive penalties to try. The unpenalized fit
+#'   (`rho = 0`) is not a candidate.
 #' @param L_ll Number of random Fourier features for the likelihood evaluation.
 #' @param seed_ll Seed for those features, shared by all fits.
 #' @param ... Every other argument of [fit()] -- for example `f_fun`, `f_par`,
@@ -106,8 +107,9 @@ loglik_impl <- function(object, L, seed, g, numerical_guard = NULL) {
 #' sel$rho
 #' }
 #' @export
-ssggp_aic <- function(Y, locs, rho = c(0, 0.005, 0.01, 0.025, 0.05, 0.1),
+ssggp_aic <- function(Y, locs, rho = c(0.005, 0.01, 0.025, 0.05, 0.1),
                       L_ll = 1000, seed_ll = 1L, ...) {
+  check_rho_grid(rho)
   fits <- lapply(rho, function(r) fit(Y, locs, rho = r, ...))
   lls  <- lapply(fits, function(f) stats::logLik(f, L = L_ll, seed = seed_ll))
   tab  <- data.frame(
@@ -130,7 +132,7 @@ ssggp_aic <- function(Y, locs, rho = c(0, 0.005, 0.01, 0.025, 0.05, 0.1),
 #' @param n Sample size to use in the BIC penalty. Must be one integer greater
 #'   than one. For misaligned data, choose the intended definition of sample
 #'   size explicitly.
-#' @param rho Numeric vector of penalties to try.
+#' @param rho Numeric vector of positive penalties to try, as in [ssggp_aic()].
 #' @param L_ll Features used for likelihood evaluation.
 #' @param seed_ll Seed for the likelihood features, shared across all fits.
 #' @param ... Passed to [fit()].
@@ -141,12 +143,13 @@ ssggp_aic <- function(Y, locs, rho = c(0, 0.005, 0.01, 0.025, 0.05, 0.1),
 #'   penalty grid are omitted from the reported criterion.
 #' @export
 ssggp_bic <- function(Y, locs, n,
-                      rho = c(0, 0.005, 0.01, 0.025, 0.05, 0.1),
+                      rho = c(0.005, 0.01, 0.025, 0.05, 0.1),
                       L_ll = 1000, seed_ll = 1L, ...) {
   if (!is.numeric(n) || length(n) != 1L || is.na(n) ||
       !is.finite(n) || n < 2 || n != floor(n)) {
     stop("`n` must be one finite integer greater than one", call. = FALSE)
   }
+  check_rho_grid(rho)
 
   fits <- lapply(rho, function(r) fit(Y, locs, rho = r, ...))
   lls  <- lapply(fits, function(f) stats::logLik(f, L = L_ll, seed = seed_ll))
@@ -157,4 +160,13 @@ ssggp_bic <- function(Y, locs, n,
   tab$BIC <- -2 * tab$logLik + log(n) * tab$df
   best <- which.min(tab$BIC)
   list(best = fits[[best]], rho = rho[best], n = n, table = tab, fits = fits)
+}
+
+# The unpenalized fit is not a candidate for penalty selection.
+check_rho_grid <- function(rho) {
+  if (!is.numeric(rho) || !length(rho) || anyNA(rho) ||
+      any(!is.finite(rho)) || any(rho <= 0))
+    stop("`rho` must be positive: the unpenalized fit (rho = 0) is not a ",
+         "candidate for selection", call. = FALSE)
+  invisible(rho)
 }

@@ -11,7 +11,20 @@ chain, about 2 GB per simulation replicate.
 
 ## The bundled spiox
 
-`spiox/` is spiox 0.8.1 (M. Peruzzi, GPL >= 2) from
-<https://github.com/mkln/spiox>, commit `5357bb7` (2026-05-27), with the Matérn smoothness upper bound raised
-from 2.1 to 2.9 (`spiox.patch`), so that the smoothness of 2.5 used in the
-simulations can be reached. A patch lets `spiox.h` accept `X` as a single column of zeros.
+`spiox/` is based on upstream spiox 0.8.1 (M. Peruzzi, GPL >= 2) from
+<https://github.com/mkln/spiox>, commit `5357bb7` (2026-05-27), with these
+changes (`spiox.patch`):
+
+1. The Matérn smoothness upper bound is raised from 2.1 to 2.9, so that the
+   smoothness of 2.5 used in the simulations can be reached.
+2. The intercept check in `spiox.h` loops over the p columns of `X` rather
+   than the q outcomes, so that `X` can be a single column of zeros.
+3. The response model's missing-data update (`SpIOX::sample_Y_misaligned`) no
+   longer clips imputed values to ±3 residual SDs, and updates the residuals
+   after each row. Only the response model calls this update; the latent model
+   used here does not, so the results are unaffected.
+4. The version is set to 0.8.1.9001, to tell the bundled copy apart from
+   upstream 0.8.1.
+
+Install it with `bash setup_env.sh --with-iox` from the repository root. Both
+IOX runners stop unless exactly version 0.8.1.9001 is installed.

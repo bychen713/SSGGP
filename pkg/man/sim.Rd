@@ -65,7 +65,7 @@ Two generators are available and they are \strong{not} interchangeable:
 factorisation, so the data are not produced by the same random Fourier
 feature approximation being fitted. Cost is \eqn{O(n^3p^3)}, and only some
 families have a closed form (see below).
-\item \code{"rff"} is Algorithm S1 of the supplement: an \code{L}-term random Fourier
+\item \code{"rff"} is the simulation algorithm of the paper: an \code{L}-term random Fourier
 feature construction, \eqn{O(Lp^2 + Lpn)}, for any spectral family. The
 draw is an approximation that improves with \code{L}.
 }

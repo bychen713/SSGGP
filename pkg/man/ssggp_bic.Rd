@@ -8,7 +8,7 @@ ssggp_bic(
   Y,
   locs,
   n,
-  rho = c(0, 0.005, 0.01, 0.025, 0.05, 0.1),
+  rho = c(0.005, 0.01, 0.025, 0.05, 0.1),
   L_ll = 1000,
   seed_ll = 1L,
   ...
@@ -21,7 +21,7 @@ ssggp_bic(
 than one. For misaligned data, choose the intended definition of sample
 size explicitly.}
 
-\item{rho}{Numeric vector of penalties to try.}
+\item{rho}{Numeric vector of positive penalties to try, as in \code{\link[=ssggp_aic]{ssggp_aic()}}.}
 
 \item{L_ll}{Features used for likelihood evaluation.}
 

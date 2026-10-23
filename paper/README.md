@@ -10,18 +10,18 @@ versioned.
 
 ## Setup
 
-From the repository root:
+From the repository root, to reproduce everything:
 
 ```bash
-bash setup_env.sh                 # renv library + SSGGP (simulation, LMC)
-bash setup_env.sh --with-merra    # ... plus the MERRA-2 preprocessing packages
+bash setup_env.sh --with-merra --with-iox
 cd paper
 ```
 
-`paper/.Rprofile` and the Slurm launchers activate the repository-root renv
-library, so scripts here see the same packages as `../demo.R`. The IOX
-comparisons use the `spiox` copy in `iox/spiox/`; see
-[`iox/README.md`](iox/README.md).
+`bash setup_env.sh` alone installs SSGGP and its dependencies, enough for the
+SSGGP and LMC fits. The options add to it and can be combined: `--with-merra`
+for MERRA-2 preprocessing and figures, and `--with-iox` for the bundled `spiox`
+used by IOX (see [`iox/README.md`](iox/README.md)). `paper/.Rprofile` and the
+Slurm launchers activate the same renv library as `../demo.R`.
 
 ## Layout
 
@@ -68,7 +68,6 @@ Simulation (`sim/result/`): tables print to the console and are written to
   microergodic scales, precision Frobenius norm, and penalized observed
   log-likelihood of the BIC-selected fits
 - `sim_result_est.R`: parameter-estimation tables by covariance family
-- `sim_result_matern.R`: the same report for the all-Matérn design
 - `sim_iox_result.R`: IOX comparison
 
 MERRA-2 (`MERRA/result/summarize.R`): estimation and prediction tables in
@@ -77,7 +76,10 @@ MERRA-2 (`MERRA/result/summarize.R`): estimation and prediction tables in
 
 ## Simulation
 
-All settings are in `sim/settings.R`.
+All settings are in `sim/settings.R`. Every stage runs one setting, chosen with
+`SSGGP_PREC` (`random`/`tridiagonal`), `SSGGP_SIGN` (`neg`/`pos`), `SSGGP_MISS`
+(`miss`/`coloc`), and `SSGGP_FAMILY` (`mixed`/`matern`); the first value of each
+is the default, and `SSGGP_FAMILY=matern` gives the all-Matérn design.
 
 | Stage | Script | Slurm launcher | Output |
 |---|---|---|---|
@@ -101,6 +103,17 @@ bash slurm/sim/sim_all_local.sh
 Rscript sim/result/sim_result.R              # stage 4
 ```
 
+To run another setting, export its variables once so that every stage sees
+them (`sbatch` passes the environment on to each job). For example, the
+all-Matérn, tridiagonal, colocated setting:
+
+```bash
+export SSGGP_FAMILY=matern SSGGP_PREC=tridiagonal SSGGP_MISS=coloc
+sbatch slurm/sim/data_generation.sh          # wait for it to finish
+bash slurm/sim/sim_all.sh
+Rscript sim/result/sim_result.R
+```
+
 The penalized observed log-likelihood trace needs a likelihood evaluation at
 iterations 50, 100, …, 500 of every selected fit. These are computed once with
 `SSGGP_COMPUTE_DIAGNOSTIC_LOGLIK=true Rscript sim/result/sim_result.R` and
@@ -108,21 +121,16 @@ cached; without the cache, that one plot is skipped.
 
 ### Baselines
 
-Data generation produces only the active setting; choose it with `SSGGP_PREC`,
-`SSGGP_SIGN`, and `SSGGP_MISS`. The all-Matérn datasets also need the Matérn
-truth in `f_fun_true` and `f_par_true` of `sim/settings.R` (the defaults
-generate mixed-family data).
-
 ```bash
 bash slurm/sim/lmc/submit_sim_lmc_all.sh          # LMC, all 16 settings
 bash slurm/sim/lmc/submit_sim_lmc_all_matern.sh   # fixed-Matérn LMC, 4 tridiagonal all-Matérn settings
 IOX_SETTING=random_neg_coloc sbatch slurm/sim/iox/sim_iox.sh   # IOX, one setting
-Rscript sim/result/sim_iox_result.R
+SSGGP_FAMILY=matern SSGGP_MISS=coloc Rscript sim/result/sim_iox_result.R   # same setting
 ```
 
 `submit_sim_lmc_all.sh` needs all 16 settings (both precision structures, signs,
 and observation designs, each mixed-family and all-Matérn) with replicates
-1–15. Run only one of the two LMC launchers on the same outputs. 
+1–15. Run only one of the two LMC launchers on the same outputs.
 
 ## MERRA-2
 

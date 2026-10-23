@@ -1,5 +1,16 @@
---- a/src/spiox.cpp	2026-10-18 20:35:53.128049080 -0400
-+++ b/src/spiox.cpp	2026-10-18 20:35:53.220049352 -0400
+--- a/DESCRIPTION
++++ b/DESCRIPTION
+@@ -1,7 +1,7 @@
+ Package: spiox
+ Type: Package
+ Title: Inside-out cross-covariance (IOX) for spatial multivariate data
+-Version: 0.8.1
++Version: 0.8.1.9001
+ Date: 2026-02-17
+ Author: Michele Peruzzi
+ Maintainer: Michele Peruzzi <peruzzi@umich.edu>
+--- a/src/spiox.cpp
++++ b/src/spiox.cpp
 @@ -45,7 +45,9 @@
    bounds_all.row(0) = arma::rowvec({.3, 200}); // phi
    bounds_all.row(1) = arma::rowvec({1e-6, 100}); // sigma
@@ -82,8 +93,8 @@
  }
  
  void SpIOX::update_BWSigma_px(){
---- a/src/spiox.h	2026-10-18 20:35:53.128049080 -0400
-+++ b/src/spiox.h	2026-10-18 20:35:53.220049352 -0400
+--- a/src/spiox.h
++++ b/src/spiox.h
 @@ -326,7 +326,7 @@
      
      // intercept? 
