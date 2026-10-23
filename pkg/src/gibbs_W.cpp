@@ -28,7 +28,7 @@ using Chol = Eigen::SimplicialLLT<Sp, Eigen::Lower, Eigen::NaturalOrdering<int>>
 // the sparse A_l performs. The residual update is a rank-1 subtraction.
 //
 // General branch (c_vals empty): the sparse A_obs / A_l_list reference, used
-// only under options(SSGGP.force_general = TRUE) by the parity tests.
+// only under options(SSGGP.force_general = TRUE).
 // [[Rcpp::export]]
 Rcpp::List gibbs_W_cpp(
   MatrixXd W_vals_sample,                     // (L * P) x MC

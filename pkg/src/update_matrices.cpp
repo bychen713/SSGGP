@@ -20,7 +20,8 @@ using Eigen::MappedSparseMatrix;
 //  * col_ss (length L), colocated: ||c_l||^2 diag(1/d_p).
 //  * col_ss_mat (P x L), misaligned: col_ss_mat[p, l] / tau_p, where
 //    col_ss_mat[p, l] = sum_{i observed for p} c_{il}^2.
-//  * neither: the general sparse product from A_l_list (parity tests only).
+//  * neither: the general sparse product from A_l_list, the reference used
+//    only under options(SSGGP.force_general = TRUE).
 //
 // `d_obs` is the per-observation nugget and `tau` the per-process one.
 

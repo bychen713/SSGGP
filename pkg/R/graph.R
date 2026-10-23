@@ -1,9 +1,9 @@
 #' Extract the estimated conditional independence graph
 #'
-#' Zeros in \eqn{\mb\sigma^{-1}} encode process-level conditional independence,
+#' Zeros in \eqn{\sigma^{-1}} encode process-level conditional independence,
 #' so its sparsity pattern *is* the estimated graph.
 #'
-#' The pattern is scale invariant: rescaling \eqn{\mb\sigma} by any positive
+#' The pattern is scale invariant: rescaling \eqn{\sigma} by any positive
 #' diagonal cannot change which entries are zero.
 #'
 #' @param object An `ssggp_fit`, or a `p` by `p` precision matrix.
@@ -26,7 +26,7 @@ graph <- function(object, tol = 0) {
 #' entries. Diagonal entries are excluded: they are non-zero by construction and
 #' including them would inflate every rate.
 #'
-#' Because \eqn{\mb\sigma^{-1}} is symmetric, each edge appears twice; the
+#' Because \eqn{\sigma^{-1}} is symmetric, each edge appears twice; the
 #' counts here are over the upper triangle, so an edge is counted once.
 #'
 #' @param estimate An `ssggp_fit`, or a `p` by `p` precision matrix.

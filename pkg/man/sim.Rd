@@ -54,9 +54,9 @@ A list with \code{Y} (\code{n} by \code{p}) and \code{locs}.
 }
 \description{
 Draws from a multivariate Gaussian process whose spectral density is
-\eqn{\mb f(x) = \mb h(x)\mb\sigma\mb h(x)^\top} with
-\eqn{\mb h(x) = \mathrm{diag}(f_j(x))^{1/2}}, so that zeros in
-\eqn{\mb\sigma^{-1}} encode process-level conditional independence.
+\eqn{f(x) = h(x)\sigma h(x)^\top} with
+\eqn{h(x) = \mathrm{diag}(f_j(x))^{1/2}}, so that zeros in
+\eqn{\sigma^{-1}} encode process-level conditional independence.
 }
 \details{
 Two generators are available and they are \strong{not} interchangeable:
@@ -70,21 +70,21 @@ feature construction, \eqn{O(Lp^2 + Lpn)}, for any spectral family. The
 draw is an approximation that improves with \code{L}.
 }
 
-In both cases the nugget \eqn{\epsilon_i \sim N(\mb 0, \mb d)} is added to
+In both cases the nugget \eqn{\epsilon_i \sim N(0, d)} is added to
 the simulated process.
 }
 \section{What \code{"exact"} draws from}{
 
 It needs a closed form for
-\eqn{\int e^{\I h^\top x}\sigma_{jk}\sqrt{f_j(x)f_k(x)}\,dx}.
+\eqn{\int e^{i h^\top x}\sigma_{jk}\sqrt{f_j(x)f_k(x)}\,dx}.
 
 \strong{Common range.} The geometric mean merges exactly:
 \eqn{\sqrt{f_jf_k}(x) = \sqrt{c_jc_k}\,(a^2+|x|^2)^{-((\nu_j+\nu_k)/2+d/2)}},
 a Matern density at the averaged smoothness and the same range. So for any
 \eqn{\nu_j} this \strong{is} the model -- the parsimonious multivariate Matern of
 Gneiting, Kleiber and Schlather (2010) -- valid for every positive-definite
-\eqn{\mb\sigma}, because the spectral matrix factorises as
-\eqn{D(x)\mb\sigma D(x)} with \eqn{D=\mathrm{diag}(\sqrt{f_j})}.
+\eqn{\sigma}, because the spectral matrix factorises as
+\eqn{D(x)\sigma D(x)} with \eqn{D=\mathrm{diag}(\sqrt{f_j})}.
 
 \strong{Differing ranges.} As a function of \eqn{z=|x|^2} the product has
 singularities at \eqn{-a_j^2} and \eqn{-a_k^2} while a Matern density has

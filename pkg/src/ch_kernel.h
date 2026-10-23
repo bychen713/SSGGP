@@ -22,7 +22,7 @@ inline void ssggp_gsl_handler_off() {
 // U(a, b, z), returning NA rather than aborting when GSL cannot evaluate it.
 inline double ssggp_U_safe(double a, double b, double z) {
   if (z <= 0.0) {
-    // the limit is finite only for b < 1; b >= 1 diverges logarithmically
+    // As z -> 0: finite for b < 1, log divergence at b = 1, ~ z^(1 - b) for b > 1
     if (b < 1.0) return gsl_sf_gamma(1.0 - b) / gsl_sf_gamma(a + 1.0 - b);
     return R_PosInf;
   }

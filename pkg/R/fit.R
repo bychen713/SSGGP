@@ -228,8 +228,8 @@ fit_impl <- function(Y, locs, f_par, f_fun, g, rho, nugget,
 
   # `use_fast` (all processes observed everywhere) is part of the checkpoint
   # spec. SSGGP.force_general selects the sparse reference branch of the
-  # kernels, which forms A = c_vals (x) I_P; the parity tests compare the dense
-  # branches against it.
+  # kernels, which forms A = c_vals (x) I_P: a slower reference against which
+  # the dense branches can be checked.
   use_fast      <- all(observed)
   force_general <- isTRUE(getOption("SSGGP.force_general", FALSE))
   masked        <- !use_fast && !force_general

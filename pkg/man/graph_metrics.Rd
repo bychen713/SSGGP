@@ -24,7 +24,7 @@ entries. Diagonal entries are excluded: they are non-zero by construction and
 including them would inflate every rate.
 }
 \details{
-Because \eqn{\mb\sigma^{-1}} is symmetric, each edge appears twice; the
+Because \eqn{\sigma^{-1}} is symmetric, each edge appears twice; the
 counts here are over the upper triangle, so an edge is counted once.
 }
 \examples{

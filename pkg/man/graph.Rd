@@ -15,11 +15,11 @@ graph(object, tol = 0)
 A logical \code{p} by \code{p} adjacency matrix, diagonal \code{FALSE}.
 }
 \description{
-Zeros in \eqn{\mb\sigma^{-1}} encode process-level conditional independence,
+Zeros in \eqn{\sigma^{-1}} encode process-level conditional independence,
 so its sparsity pattern \emph{is} the estimated graph.
 }
 \details{
-The pattern is scale invariant: rescaling \eqn{\mb\sigma} by any positive
+The pattern is scale invariant: rescaling \eqn{\sigma} by any positive
 diagonal cannot change which entries are zero.
 }
 \examples{

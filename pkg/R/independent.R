@@ -2,7 +2,7 @@
 #'
 #' The baseline that ignores cross-process dependence: each marginal process is
 #' fitted on its own as a univariate Gaussian process with the same spectral
-#' family, so \eqn{\mb\sigma} is diagonal by construction. This is the "Ind"
+#' family, so \eqn{\sigma} is diagonal by construction. This is the "Ind"
 #' comparison in the paper.
 #'
 #' Unlike [fit()], the likelihood is exact: the full \eqn{n\times n} covariance
@@ -64,12 +64,14 @@ fit_independent <- function(Y, locs,
                             threads = getOption("SSGGP.threads", 5L),
                             verbose = FALSE) {
   with_threads(resolve_threads(threads),
+               # Legacy defaults in (1/variance, a, nu, nugget) order: the Matern
+               # bounds variance 0.001-100, range 0.01-5 (a 0.2-100), nu <= 7.
                if (is.null(f_par))
                  fit_independent_matern(Y, locs, par_init, fixed,
                                         if (is.null(lower))
-                                          log(c(0.001, 0.01, 0.01, 0.001)) else lower,
+                                          log(c(0.01, 0.2, 0.01, 0.001)) else lower,
                                         if (is.null(upper))
-                                          log(c(100, 5, 7, 100)) else upper,
+                                          log(c(1000, 100, 7, 100)) else upper,
                                         verbose)
                else
                  fit_independent_family(Y, locs, f_fun, f_par, variance_init,

@@ -65,7 +65,7 @@ with different parameter counts.
 \description{
 The baseline that ignores cross-process dependence: each marginal process is
 fitted on its own as a univariate Gaussian process with the same spectral
-family, so \eqn{\mb\sigma} is diagonal by construction. This is the "Ind"
+family, so \eqn{\sigma} is diagonal by construction. This is the "Ind"
 comparison in the paper.
 }
 \details{

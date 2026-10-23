@@ -18,7 +18,7 @@ returning an \code{L} by \code{dim} matrix of frequencies. Also carries \code{pa
 }
 \description{
 Bundles the proposal density \eqn{g} with a sampler from it, so the
-frequencies \eqn{X_\ell \sim g} and the weights \eqn{2\mb f(X_\ell)/g(X_\ell)}
+frequencies \eqn{X_\ell \sim g} and the weights \eqn{2f(X_\ell)/g(X_\ell)}
 use the same \eqn{g}. The proposal should have heavier tails than every
 marginal spectral density.
 }
