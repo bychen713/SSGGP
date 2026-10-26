@@ -38,6 +38,7 @@ paper/
 │   ├── main/               SSGGP fits, penalty selection, prediction
 │   ├── lmc/                LMC baseline
 │   ├── iox/                IOX baseline
+│   ├── sensitivity_L/      likelihood error against L (Fig. S2)
 │   └── result/             tables and figures
 ├── MERRA/                  MERRA-2 application
 │   ├── settings.R
@@ -67,7 +68,7 @@ saved results using the active [simulation settings](#simulation).
 |---|---|
 | `sim/result/sim_result.R` | Tables 1–3, S1–S7; Figs. 1–2, S1, S3–S4 |
 | `sim/result/sim_iox_result.R` | IOX comparisons for Tables 2–3, S5–S7 |
-| `sim/result/plot_sensitivity_L.R RESULTS_DIR` | Fig. S2 |
+| `sim/result/plot_sensitivity_L.R` | Fig. S2 |
 | `MERRA/result/summarize.R` | Tables 4, S8; Figs. 3–4 |
 
 Simulation tables and figures go to `sim/output/tables/<setting>/` and
@@ -79,8 +80,9 @@ Table S8 uses medians across folds of within-fold means.
 Fig. 2 needs all four mixed-family random-precision settings (sign × alignment).
 Fig. S1 uses `random_pos_coloc_mix`; Fig. S3 uses `random_{pos,neg}_coloc_mix`.
 To compute and cache missing likelihood traces for Fig. S3, set
-`SSGGP_COMPUTE_DIAGNOSTIC_LOGLIK=true`. For Fig. S2, `RESULTS_DIR` must contain
-`mixed_p9/`, `mixed_p25/`, and `mixed_p50/` (see the script header).
+`SSGGP_COMPUTE_DIAGNOSTIC_LOGLIK=true`. Fig. S2 plots the results of the
+[likelihood-error experiment](#figure-s2-experiment) from `sim/output/sensitivity_L/`
+(or a folder given as its argument).
 
 ## Simulation
 
@@ -139,6 +141,28 @@ SSGGP_FAMILY=matern SSGGP_MISS=coloc Rscript sim/result/sim_iox_result.R   # sam
 `submit_sim_lmc_all.sh` needs all 16 settings (both precision structures, signs,
 and observation designs, each mixed-family and all-Matérn) with replicates
 1–15. Run only one of the two LMC launchers on the same outputs.
+
+### Figure S2 experiment
+
+The likelihood error against the number of features L uses its own simulated
+data (`sim/sensitivity_L/`). Each launcher is a 15-replicate array. Within each
+p, run the steps in order, waiting for each to finish.
+
+```bash
+export SSGGP_FAMILY=mixed
+# p = 9
+sbatch slurm/sim/sensitivity_L/p9.sh
+# p = 25
+SSGGP_P=25 SSGGP_STAGE=integrated sbatch slurm/sim/sensitivity_L/highp.sh
+SSGGP_P=25 SSGGP_STAGE=simulated  sbatch slurm/sim/sensitivity_L/highp.sh
+# p = 50
+SSGGP_P50_STAGE=curves    sbatch slurm/sim/sensitivity_L/p50_integrated.sh
+SSGGP_P50_STAGE=reference sbatch slurm/sim/sensitivity_L/p50_integrated.sh
+SSGGP_P50_STAGE=merge     sbatch slurm/sim/sensitivity_L/p50_integrated.sh
+sbatch slurm/sim/sensitivity_L/p50_simulated.sh
+# plot
+Rscript sim/result/plot_sensitivity_L.R
+```
 
 ## MERRA-2
 

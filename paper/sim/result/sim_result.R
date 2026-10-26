@@ -765,9 +765,9 @@ local({
     bic_rho <- vapply(seq_len(n_sim), function(j) load_object(file.path(dirs[k],
       sprintf("BIC_%s_%d.RData", pr$name[k], j)), "result_final")$rho, numeric(1))
     do.call(rbind, lapply(seq_len(nrow(grid_params)), function(r) {
-      q <- as.matrix(load_object(file.path(dirs[k], paste0("est", r, ".RData")),
-                                 "result_est")$sigma_inv_est)
-      selected <- q[upper.tri(q)] != 0
+      est <- as.matrix(load_object(file.path(dirs[k], paste0("est", r, ".RData")),
+                                   "result_est")$sigma_inv_est)
+      selected <- est[upper.tri(est)] != 0
       data.frame(sign = pr$sign[k], alignment = pr$alignment[k], rho = grid_params$rho[r],
                  bic = abs(grid_params$rho[r] - bic_rho[grid_params$sim[r]]) < 1e-12,
                  tp = sum(selected & edge), fp = sum(selected & !edge),

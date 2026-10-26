@@ -245,16 +245,18 @@ if (length(matern_idx)) {
                                          err_by_process$process), ]
   rownames(err_by_process) <- NULL
 
-  print_by_process <- TRUE
-  if (print_by_process) {
-    cat("\n-- per Matern process, mean over folds --\n")
-    old_width <- options(width = 200)
-    num <- vapply(err_by_process, is.numeric, logical(1))
-    show <- err_by_process
-    show[num] <- lapply(show[num], function(z) round(z, 4))
-    print(show, row.names = FALSE)
-    options(old_width)
-  }
+  # Tables S6/S7: per parameter, bias and SD averaged over the Matern processes.
+  err_summary <- aggregate(cbind(bias, sd) ~ par, err_by_process, mean)
+  print(err_summary, row.names = FALSE, digits = 4)
+  write.csv(err_summary, file.path(table_dir, "estimation_iox.csv"), row.names = FALSE)
+
+  cat("\n-- per Matern process, mean over folds --\n")
+  old_width <- options(width = 200)
+  num <- vapply(err_by_process, is.numeric, logical(1))
+  show <- err_by_process
+  show[num] <- lapply(show[num], function(z) round(z, 4))
+  print(show, row.names = FALSE)
+  options(old_width)
 
 } else {
   message("No true Matern processes: parameter-estimation errors are not applicable.")

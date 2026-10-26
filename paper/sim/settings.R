@@ -108,7 +108,8 @@ seed_ll   <- 1L           # shared across penalties so the BIC comparison is pai
 # Compute: threads within each fit
 threads   <- 32L
 
-# Number of LMC latent factors reported in the result tables.
+# LMC baseline: saved results are padded to q factor columns. The fits use 10
+# factors (random precision) or 6 (tridiagonal); see sim/lmc/sim_lmc_structure.R.
 q <- as.integer(Sys.getenv("SSGGP_LMC_Q", as.character(floor(0.25 * P))))
 
 # Derived quantities

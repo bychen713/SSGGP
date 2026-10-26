@@ -111,9 +111,6 @@ if (length(bad)) {
   tryCatch(renv::restore(packages=bad, prompt=FALSE), error=function(e) NULL)
   bad <- Filter(function(p) !isTRUE(tryCatch({suppressMessages(loadNamespace(p)); TRUE}, error=function(e) FALSE)), bad)
 }
-if (!isTRUE(tryCatch({Rcpp::evalCpp("1+1"); TRUE}, error=function(e) FALSE)))
-  message("WARNING: Rcpp cannot compile C++ here -- demo.R will fail at sourceCpp(). ",
-          "Install a compiler (macOS: xcode-select --install; Windows: Rtools44; Linux: build-essential gfortran).")
 
 # ---- MERRA-2 preprocessing packages (--with-merra) --------------------------
 merra <- strsplit(Sys.getenv("ROOTS_MERRA"), " ")[[1]]; merra <- merra[nzchar(merra)]
