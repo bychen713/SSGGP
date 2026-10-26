@@ -55,8 +55,9 @@ Rscript MERRA/result/summarize.R        # after the jobs finish
 `summarize.R` writes to `output/`:
 
 - `prediction_by_fold.csv` and `prediction_mean.csv`
-- `estimation_by_fold.csv`: fitted parameters of IND, dense and BIC SSGGP, LMC,
-  and IOX (posterior means over the prediction draws)
+- `estimation_by_fold.csv` and `estimation_median.csv`: fitted parameters by fold
+  and medians across folds for IND, dense and BIC SSGGP, LMC, and IOX
 - `figure/correlation.png`: empirical residual correlation
-- `figure/precision.png`: dense and BIC SSGGP precision matrices, fold 1
+- `figure/precision.png`: sample precision from colocated training folds and
+  fold-median dense and BIC SSGGP precision matrices for both designs
 - `figure/data_maps.png`: raw and processed values for processes 1, 20, and 40

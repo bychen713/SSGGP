@@ -676,8 +676,6 @@ diagnostic_files <- plot_simulation_diagnostics(
   n_sim = n_sim,
   P = P,
   family_names = family_names,
-  f_par_true = f_par_true,
-  Q_true = true_precision(),
   n_iter = iter,
   L_ll = L_ll,
   seed_ll = seed_ll,

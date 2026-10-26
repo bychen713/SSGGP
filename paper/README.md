@@ -60,19 +60,17 @@ must exist before calling `sbatch` directly.
 
 ## Tables and figures
 
-Simulation (`sim/result/`): tables print to the console and are written to
-`sim/output/tables/<setting>/`; figures go to `sim/output/figure/<setting>/`.
+Simulation outputs go to `sim/output/tables/<setting>/` and
+`sim/output/figure/<setting>/`:
 
-- `sim_result.R`: prediction, estimation-error, and computation-time tables;
-  estimated and true precision and true correlation plots; and traces of the
-  microergodic scales, precision Frobenius norm, and penalized observed
-  log-likelihood of the BIC-selected fits
-- `sim_result_est.R`: parameter-estimation tables by covariance family
-- `sim_iox_result.R`: IOX comparison
+- `sim/result/sim_paper_figures.R`: Figure 2 precision–recall curve and Figure S1 simulated fields (`Rscript sim/result/sim_paper_figures.R`).
+- `sim/result/sim_likelihood_error.R`: Figure S2 likelihood error against a 5,000-feature Monte Carlo reference (`Rscript sim/result/sim_likelihood_error.R`).
+- `sim/result/sim_result.R`: simulation tables, precision/correlation figures, and Figure S3 traces (2×4: Matérn, CH, precision norm, nugget); the grid is written after both observation designs finish.
+- `sim/result/sim_result_est.R`: family-specific estimation tables.
+- `sim/result/sim_iox_result.R`: IOX comparison.
+- `MERRA/result/summarize.R`: prediction tables, Figure 4 precision (entrywise medians of three folds), and Table S8 fitted-parameter medians (`Rscript MERRA/result/summarize.R`). The sample precision uses each colocated fold's 500 training locations; the three matrices are summarized entrywise and shown for both designs.
 
-MERRA-2 (`MERRA/result/summarize.R`): estimation and prediction tables in
-`MERRA/output/`; precision, correlation, and data maps in
-`MERRA/output/figure/`.
+MERRA outputs go to `MERRA/output/`; figures go to `MERRA/output/figure/`.
 
 ## Simulation
 

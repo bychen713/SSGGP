@@ -49,11 +49,16 @@ write_estimation_table <- function() {
         add(design, fold, "IOX", dat$process_names[j], rownames(par), par[, j])
     }
   }
-  write.csv(do.call(rbind, rows),
-            file.path(merra_output_base, "estimation_by_fold.csv"), row.names = FALSE)
+  detail <- do.call(rbind, rows)
+  write.csv(detail, file.path(merra_output_base, "estimation_by_fold.csv"),
+            row.names = FALSE)
+  median_rows <- aggregate(estimate ~ design + method + component + parameter,
+                           detail, stats::median)
+  write.csv(median_rows, file.path(merra_output_base, "estimation_median.csv"),
+            row.names = FALSE)
 }
 
-# Full-grid empirical correlation and first-fold fitted precision matrices.
+# Full-grid empirical correlation and fold-median fitted precision matrices.
 write_matrix_figures <- function(full, figure_dir) {
   heatmap <- function(x, title, limits) {
     p <- nrow(x)
@@ -76,21 +81,33 @@ write_matrix_figures <- function(full, figure_dir) {
     heatmap(cor(full$normalized), "Empirical full-grid residual correlation", c(-1, 1)),
     width = 9, height = 8, dpi = 300)
   matrices <- list()
+  # The sample precision uses only the colocated training data in each fold.
+  sample_matrices <- lapply(seq_len(merra_n_folds), function(fold) {
+    y <- readRDS(file.path(merra_data_root, "colocated",
+                           sprintf("fold%d.rds", fold)))$Y_mat
+    solve(stats::cov(y))
+  })
+  sample_precision <- apply(simplify2array(sample_matrices), c(1L, 2L),
+                            stats::median)
   for (design in c("misaligned", "colocated")) {
     out <- file.path(merra_output_base, design, "ssggp")
+    matrices[[sprintf("%s: Sample (colocated training folds)", design)]] <-
+      sample_precision
     for (method in c("dense", "BIC")) {
-      pred <- readRDS(file.path(out,
-        sprintf("pred_%s_fold1%s.rds", method, merra_pred_suffix)))
-      ri <- if (method == "dense") 1L else which.min(replace(pred$bic, 1L, Inf))
-      est <- readRDS(file.path(out, sprintf("est_fold1_rho%d.rds", ri)))
-      title <- sprintf("%s: %s (fold 1, rho=%g)", design, method, est$rho)
-      matrices[[title]] <- est$fit$sigma_inv
+      fold_matrices <- lapply(seq_len(merra_n_folds), function(fold) {
+        pred <- readRDS(file.path(out,
+          sprintf("pred_%s_fold%d%s.rds", method, fold, merra_pred_suffix)))
+        ri <- if (method == "dense") 1L else which.min(replace(pred$bic, 1L, Inf))
+        readRDS(file.path(out, sprintf("est_fold%d_rho%d.rds", fold, ri)))$fit$sigma_inv
+      })
+      matrices[[sprintf("%s: %s (fold median)", design, method)]] <-
+        apply(simplify2array(fold_matrices), c(1L, 2L), stats::median)
     }
   }
   limit <- max(abs(unlist(matrices)))
   panels <- Map(function(x, title) heatmap(x, title, c(-limit, limit)),
                 matrices, names(matrices))
-  figure <- patchwork::wrap_plots(panels, ncol = 2, guides = "collect")
+  figure <- patchwork::wrap_plots(panels, ncol = 3, guides = "collect")
   ggplot2::ggsave(file.path(figure_dir, "precision.png"), figure,
                   width = 15, height = 13, dpi = 300)
 }

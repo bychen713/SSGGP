@@ -55,27 +55,6 @@
   out
 }
 
-.microergodic_truth <- function(family, family_names, f_par_true, Q_true) {
-  process <- which(family_names == family)
-  marginal_variance <- diag(chol2inv(chol(Q_true)))[process]
-  pars <- f_par_true[process]
-  if (family == "matern") {
-    a <- vapply(pars, `[[`, numeric(1), "a")
-    nu <- vapply(pars, `[[`, numeric(1), "nu")
-    return(marginal_variance * a^(2 * nu))
-  }
-  if (family == "ch") {
-    beta <- vapply(pars, `[[`, numeric(1), "beta")
-    alpha <- vapply(pars, `[[`, numeric(1), "alpha")
-    nu <- vapply(pars, `[[`, numeric(1), "nu")
-    return(exp(log(marginal_variance) + nu * log(2) +
-                 lgamma(alpha + nu) - lgamma(alpha) -
-                 2 * nu * log(beta)))
-  }
-  stop("no polynomial-tail microergodic scale for family `", family, "`",
-       call. = FALSE)
-}
-
 .precision_frobenius_trace <- function(fit) {
   P <- fit$spec$P
   pairs <- which(upper.tri(matrix(0, P, P), diag = TRUE), arr.ind = TRUE)
@@ -88,35 +67,35 @@
   values
 }
 
-.draw_trace_plot <- function(path, values, truth = NULL, ylab,
-                             iterations = seq_len(nrow(values))) {
+.draw_trace_plot <- function(path, values, ylab,
+                             iterations = seq_len(nrow(values)), title = NULL) {
   values <- as.matrix(values)
   if (nrow(values) != length(iterations) || any(!is.finite(values)))
     stop("invalid values supplied for ", basename(path), call. = FALSE)
   center <- rowMeans(values)
   spread <- if (ncol(values) > 1L) apply(values, 1L, stats::sd) else
     rep(0, nrow(values))
-  limits <- range(values, center - spread, center + spread, truth,
-                  finite = TRUE)
+  limits <- range(values, center - spread, center + spread, finite = TRUE)
   pad <- max(diff(limits) * 0.04, 0.002)
   limits <- limits + c(-pad, pad)
-  grDevices::png(path, width = 1950, height = 1500, res = 300,
-                 type = "cairo")
-  on.exit(grDevices::dev.off(), add = TRUE)
+  if (!is.null(path)) {
+    grDevices::png(path, width = 1950, height = 1500, res = 300,
+                   type = "cairo")
+    on.exit(grDevices::dev.off(), add = TRUE)
+  }
   # Place the y label just beyond the widest tick label.
   label_line <- 1.6 + 0.85 * max(nchar(format(pretty(limits))))
   graphics::par(mar = c(5.0, label_line + 2.2, 0.7, 2.5),
                 mgp = c(3.5, 0.75, 0), las = 1)
   graphics::plot(NA_real_, xlim = range(iterations), ylim = limits,
                  xaxs = "i", xlab = "Iteration", ylab = "",
-                 cex.axis = 1.5, cex.lab = 1.4)
+                 cex.axis = if (is.null(path)) 0.8 else 1.5,
+                 cex.lab = if (is.null(path)) 0.8 else 1.4,
+                 main = title)
   graphics::mtext(ylab, side = 2, line = label_line, las = 0,
-                  cex = min(1.4, 1.4 * 36 / nchar(ylab)))   # long labels shrink to fit
+                  cex = if (is.null(path)) 0.8 else
+                    min(1.4, 1.4 * 36 / nchar(ylab)))
   graphics::abline(h = pretty(limits, 4), col = "#ECECEC", lwd = 0.6)
-  if (!is.null(truth) && length(truth) > 1L && diff(range(truth)) > 0)
-    graphics::rect(min(iterations), min(truth), max(iterations), max(truth),
-                   col = grDevices::adjustcolor("#B4413C", alpha.f = 0.06),
-                   border = NA)
   graphics::polygon(c(iterations, rev(iterations)),
                     c(center - spread, rev(center + spread)),
                     col = "#B9D5E9", border = NA)
@@ -127,9 +106,44 @@
   graphics::lines(iterations, center, col = "#145A86", lwd = 2.1)
   if (length(iterations) == 1L)   # a single point draws no line
     graphics::points(iterations, center, pch = 19, col = "#145A86")
-  if (!is.null(truth))
-    graphics::abline(h = mean(truth), col = "#B4413C", lty = 2, lwd = 1.8)
   graphics::box(col = "#777777")
+  invisible(path)
+}
+
+.nugget_trace <- function(fit) {
+  nugget <- as.matrix(fit$chain$nugget)
+  colMeans(nugget)
+}
+
+.draw_diagnostic_grid <- function(fig_dir, setting_name, traces) {
+  trace_path <- file.path(fig_dir, "diagnostic_traces.rds")
+  saveRDS(traces, trace_path)
+  other <- if (grepl("_miss", setting_name)) sub("_miss", "_coloc", setting_name) else
+    sub("_coloc", "_miss", setting_name)
+  # fig_dir is sim/output/figure/<setting>/diagnostics.
+  other_path <- file.path(dirname(dirname(fig_dir)), other, "diagnostics",
+                          "diagnostic_traces.rds")
+  if (!file.exists(other_path)) return(invisible(NULL))
+  pair <- list(miss = if (grepl("_miss", setting_name)) traces else readRDS(other_path),
+               coloc = if (grepl("_coloc", setting_name)) traces else readRDS(other_path))
+  path <- file.path(dirname(dirname(fig_dir)),
+                    sub("_(miss|coloc)", "", setting_name), "diagnostics_2x4.png")
+  dir.create(dirname(path), recursive = TRUE, showWarnings = FALSE)
+  grDevices::png(path, width = 2400, height = 1200, res = 200, type = "cairo")
+  on.exit(grDevices::dev.off(), add = TRUE)
+  graphics::par(mfrow = c(2, 4), oma = c(0, 0, 0, 0))
+  for (design in c("coloc", "miss")) {
+    for (name in c("matern", "ch", "precision", "nugget")) {
+      values <- pair[[design]][[name]]
+      if (is.null(values)) {
+        graphics::plot.new()
+        graphics::title(main = paste(design, name))
+      } else {
+        .draw_trace_plot(NULL, values, ylab = name,
+                         title = paste(design, name))
+      }
+    }
+  }
   invisible(path)
 }
 
@@ -215,7 +229,7 @@
 #' and are computed only when `compute_observed_ll` is true.
 plot_simulation_diagnostics <- function(out_dir, fig_dir, setting_name,
                                         grid_params, n_sim, P, family_names,
-                                        f_par_true, Q_true, n_iter, L_ll,
+                                        n_iter, L_ll,
                                         seed_ll, threads,
                                         compute_observed_ll = FALSE,
                                         observed_ll_every = 50L) {
@@ -248,22 +262,30 @@ plot_simulation_diagnostics <- function(out_dir, fig_dir, setting_name,
     stop("expected ", n_iter, " iterations in every selected fit", call. = FALSE)
 
   written <- character()
+  trace_grid <- list()
   for (family in intersect(c("matern", "ch"), unique(family_names))) {
     traces <- lapply(fits, .microergodic_trace, family = family)
     # Average replicate-specific log10 scales for each process, retaining the
     # between-process trajectories in the plot.
     values <- t(Reduce(`+`, lapply(traces, log10)) / length(traces))
-    truth <- log10(.microergodic_truth(family, family_names, f_par_true, Q_true))
     path <- file.path(fig_dir, paste0(family, "_microergodic.png"))
-    .draw_trace_plot(path, values, truth, "log10 microergodic scale")
+    .draw_trace_plot(path, values, ylab = "log10 microergodic scale")
+    trace_grid[[family]] <- values
     written <- c(written, path)
   }
 
   precision <- vapply(fits, .precision_frobenius_trace, numeric(n_iter))
   path <- file.path(fig_dir, "precision_frobenius.png")
-  .draw_trace_plot(path, precision, sqrt(sum(Q_true^2)),
-                   "Precision Frobenius norm")
+  .draw_trace_plot(path, precision, ylab = "Precision Frobenius norm")
+  trace_grid$precision <- precision
   written <- c(written, path)
+
+  nugget <- vapply(fits, .nugget_trace, numeric(n_iter))
+  path <- file.path(fig_dir, "nugget.png")
+  .draw_trace_plot(path, nugget, ylab = "Nugget variance")
+  trace_grid$nugget <- nugget
+  written <- c(written, path)
+  .draw_diagnostic_grid(fig_dir, setting_name, trace_grid)
 
   # Runs shorter than observed_ll_every are evaluated at their last iteration.
   observed_iterations <- if (n_iter >= observed_ll_every)
@@ -277,7 +299,7 @@ plot_simulation_diagnostics <- function(out_dir, fig_dir, setting_name,
             "rerun sim_result.R to compute them.")
   } else {
     path <- file.path(fig_dir, "penalized_observed_loglik.png")
-    .draw_trace_plot(path, values / 1000, NULL,
+    .draw_trace_plot(path, values / 1000,
                      "Penalized observed log-likelihood (thousands)",
                      observed_iterations)
     written <- c(written, path)
