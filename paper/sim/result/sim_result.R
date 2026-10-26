@@ -208,8 +208,8 @@ summarize_results <- function() {
                      paste0('nu_true',1:P),paste0('nugget_true', 1:P),
                      'norm_true', paste0('rmse_true',1:P),
                      paste0('coverage_true',1:P),
-                     paste0('var_true',1:P), 
-                     'rmsesum_true',"coveragesum_true", "varsum_true",
+                     paste0('sd_true',1:P),
+                     'rmsesum_true',"coveragesum_true", "sdsum_true",
                      'time_true'
       )
       lmc_names <- if (!have_lmc) NULL else
@@ -217,8 +217,8 @@ summarize_results <- function() {
                      paste0('nu_lmc',1:q),paste0('nugget_lmc', 1:P),
                      'norm_lmc', paste0('rmse_lmc',1:P),
                      paste0('coverage_lmc',1:P),
-                     paste0('var_lmc',1:P),
-                     'rmsesum_lmc',"coveragesum_lmc", "varsum_lmc",
+                     paste0('sd_lmc',1:P),
+                     'rmsesum_lmc',"coveragesum_lmc", "sdsum_lmc",
                      'time_lmc'
       )
       approx_names <- c('prec', 'nugget', 'a', 'nu',
@@ -227,10 +227,10 @@ summarize_results <- function() {
                         'norm',
                         'rmse',
                         'coverage',
-                        'var',
+                        'sd',
                         'rmsesum',
                         'coveragesum', 
-                        'varsum'
+                        'sdsum'
       )
       get_names <- function(approx_names,method){
         out <- c()
@@ -261,9 +261,10 @@ summarize_results <- function() {
     results_df <- results_df %>% dplyr::select(contains(c("lmc","BIC","dense","true","P","L","prec","a_","nu_","nugget_","time"),
                                                         ignore.case=F))
     
+    # Interval lengths: 3.92 times the mean predictive SD (columns sd*).
     results_df <- results_df %>%
-      mutate(across(starts_with("var"), ~ sqrt(.x) * 1.96 * 2,  .names = "tmp_{.col}")) %>%
-      rename_with(~ sub("^tmp_var", "len", .x), starts_with("tmp_var"))
+      mutate(across(starts_with("sd"), ~ .x * 3.92, .names = "tmp_{.col}")) %>%
+      rename_with(~ sub("^tmp_sd", "len", .x), starts_with("tmp_sd"))
     
     # Graph-recovery rates against the true precision.
     off_diag_mask <- row(Sigma_inv) != col(Sigma_inv)
@@ -445,6 +446,7 @@ summarize_results <- function() {
       results_df <- all_results_df[ind, ]
       
       out <- results_df %>%
+        mutate(replicate = row_number()) %>%
         pivot_longer(cols = starts_with(paste0(variable, "_"))) %>%
         mutate(
           method = case_when(
@@ -454,7 +456,12 @@ summarize_results <- function() {
             str_starts(name, paste0(variable, "_lmc"))         ~ "LMC",
             TRUE                                               ~ name
           )
-        ) %>%
+        )
+      # Average within each replicate first, so every reported SD is across
+      # replicates, including parameter estimates and process-specific nuggets.
+      out <- out %>%
+        group_by(method, replicate) %>%
+        summarise(value = mean(value, na.rm = TRUE), .groups = "drop") %>%
         group_by(method) %>%
         summarise(
           avg_len = mean(value, na.rm = TRUE),
@@ -537,6 +544,7 @@ summarize_results <- function() {
                   max(truth_vec, na.rm = TRUE))
 
       err_list[[length(err_list) + 1]] <- results_df %>%
+        mutate(replicate = row_number()) %>%
         pivot_longer(cols = starts_with(paste0(variable, "_"))) %>%
         mutate(
           method = case_when(
@@ -552,11 +560,12 @@ summarize_results <- function() {
                                shared_truth, truth_vec[process])
         ) %>%
         filter(!is.na(method), is.finite(err)) %>%
+        group_by(method, replicate) %>%
+        summarise(replicate_error = mean(err), .groups = "drop") %>%
         group_by(method) %>%
         summarise(
-          bias = mean(err),
-          # pooled over processes, whose true values differ
-          sd   = stats::sd(err),
+          bias = mean(replicate_error),
+          sd   = stats::sd(replicate_error),
           .groups = "drop"
         ) %>%
         mutate(
@@ -582,8 +591,8 @@ summarize_results <- function() {
     select(variable, missing_TF, prec_structure, offdiag_sign, truth,
            any_of(ordered_err))
 
-  cat("\n================ error against the truth: bias and SD, pooled over ",
-      "processes and replicates ================\n\n", sep = "")
+  cat("\n================ error against the truth: process mean within replicate, ",
+      "then bias and SD over replicates ================\n\n", sep = "")
   old_width <- options(width = 200)
   print(as.data.frame(err_wide %>% mutate(across(where(is.numeric), \(z) round(z, 4)))),
         row.names = FALSE, na.print = "-")
@@ -627,6 +636,15 @@ summarize_results <- function() {
   table_dir <- here("sim", "output", "tables", setting_name)
   dir.create(table_dir, recursive = TRUE, showWarnings = FALSE)
   write.csv(pred_tab, file.path(table_dir, "prediction.csv"), row.names = FALSE)
+  # Graph recovery: true- and false-positive rates of the off-diagonal support.
+  graph_rows <- c(TPR = "True-positive rate", FPR = "False-positive rate")
+  graph_tab <- do.call(rbind, lapply(names(graph_rows), function(v) {
+    r <- wide_df[wide_df$variable == v, , drop = FALSE]
+    data.frame(metric = graph_rows[[v]],
+               BIC = sprintf("%.3f (%.3f)", r$BIC_summary_val[1], r$BIC_sd_val[1]),
+               Dense = sprintf("%.3f (%.3f)", r$Dense_summary_val[1], r$Dense_sd_val[1]))
+  }))
+  write.csv(graph_tab, file.path(table_dir, "graph_recovery.csv"), row.names = FALSE)
   write.csv(err_wide, file.path(table_dir, "estimation_error.csv"), row.names = FALSE)
   time_rows <- wide_df[wide_df$variable == "time", , drop = FALSE]
   time_table <- do.call(rbind, lapply(methods, function(method) {
@@ -677,10 +695,125 @@ diagnostic_files <- plot_simulation_diagnostics(
   P = P,
   family_names = family_names,
   n_iter = iter,
-  L_ll = L_ll,
+  L_ll = L_ll_diag,
   seed_ll = seed_ll,
   threads = threads,
   compute_observed_ll = compute_diagnostic_loglik)
+
+# Figure S1: simulated fields of the first 21 processes in replicate 1.
+local({
+  processes <- seq_len(min(21L, P))
+  d <- new.env()
+  load(file.path(data_dir, "1.RData"), envir = d)
+  family_label <- c(matern = "Matérn", ch = "CH", se = "SE")
+  labels <- setNames(family_label[unlist(f_fun_true)[processes]], processes)
+  plot_data <- data.frame(
+    x = rep(d$grid[, 1L], length(processes)), y = rep(d$grid[, 2L], length(processes)),
+    value = as.vector(d$Y_mat[, processes]),
+    process = factor(rep(processes, each = nrow(d$Y_mat)), levels = processes))
+  limit <- max(8, ceiling(max(abs(plot_data$value))))   # symmetric, at least [-8, 8]
+  breaks <- if (limit == 8) c(-8, -4, 0, 4, 8) else pretty(c(-limit, limit), n = 5)
+  p <- ggplot(plot_data, aes(x, y, color = value)) +
+    geom_point(size = 1.45, shape = 16) +
+    facet_wrap(~process, ncol = 7, labeller = labeller(process = labels)) +
+    coord_equal(xlim = c(0, domain_max), ylim = c(0, domain_max), expand = FALSE) +
+    scale_color_gradientn(
+      colors = c("#67001F", "#B2182B", "#E66B5B", "#FFFFFF", "#6798D0", "#2166AC", "#053061"),
+      values = c(0, 0.25, 0.375, 0.5, 0.625, 0.75, 1),
+      limits = c(-limit, limit), breaks = breaks, name = "Simulated\nvalue",
+      guide = guide_colorbar(barwidth = grid::unit(0.65, "cm"),
+                             barheight = grid::unit(10, "cm"), title.position = "top")) +
+    scale_x_continuous(breaks = 0:5, minor_breaks = NULL) +
+    scale_y_continuous(breaks = 0:5, minor_breaks = NULL) +
+    theme_void(base_size = 15) +
+    theme(panel.border = element_rect(color = "#444444", fill = NA, linewidth = 0.65),
+          panel.background = element_rect(fill = "#B8B8B8", color = NA),
+          panel.grid.major = element_line(color = "#CCCCCC", linewidth = 0.25,
+                                          inherit.blank = FALSE),
+          panel.spacing = grid::unit(0.16, "in"),
+          strip.text = element_text(size = 15, margin = margin(b = 5)),
+          legend.title = element_text(size = 19), legend.text = element_text(size = 16),
+          legend.margin = margin(0, 8, 0, 12), plot.margin = margin(10, 10, 8, 10))
+  ggsave(file.path(fig_dir, "processes_1_21.png"), p, width = 18, height = 7.3,
+         units = "in", dpi = 300, bg = "white")
+})
+
+# Figure 2: precision-recall curves of edge recovery along the penalty path for
+# the four mixed-family settings of this precision structure (positive/negative
+# sign x colocated/misaligned), averaged over replicates, with the BIC-selected
+# penalty marked. Drawn once all four settings have their results.
+local({
+  pr <- expand.grid(sign = c("pos", "neg"), alignment = c("coloc", "miss"),
+                    stringsAsFactors = FALSE)
+  pr$name <- paste(prec_structure, pr$sign, pr$alignment, "mix", sep = "_")
+  dirs <- here("sim/output/simulation", pr$name)
+  if (family_design != "mixed" ||
+      !all(file.exists(file.path(dirs, sprintf("BIC_%s_%d.RData", pr$name, n_sim))))) {
+    message("Figure 2 skipped: it needs all four mixed-family ", prec_structure,
+            " settings (pos/neg x coloc/miss)")
+    return(invisible())
+  }
+  load_object <- function(file, name) { e <- new.env(); load(file, envir = e); e[[name]] }
+  truth_for <- function(sign) {   # true_precision() reads the global offdiag_sign
+    old <- offdiag_sign; on.exit(offdiag_sign <<- old)
+    offdiag_sign <<- sign
+    as.matrix(true_precision())
+  }
+  path <- do.call(rbind, lapply(seq_len(nrow(pr)), function(k) {
+    truth <- truth_for(pr$sign[k]); edge <- truth[upper.tri(truth)] != 0
+    bic_rho <- vapply(seq_len(n_sim), function(j) load_object(file.path(dirs[k],
+      sprintf("BIC_%s_%d.RData", pr$name[k], j)), "result_final")$rho, numeric(1))
+    do.call(rbind, lapply(seq_len(nrow(grid_params)), function(r) {
+      q <- as.matrix(load_object(file.path(dirs[k], paste0("est", r, ".RData")),
+                                 "result_est")$sigma_inv_est)
+      selected <- q[upper.tri(q)] != 0
+      data.frame(sign = pr$sign[k], alignment = pr$alignment[k], rho = grid_params$rho[r],
+                 bic = abs(grid_params$rho[r] - bic_rho[grid_params$sim[r]]) < 1e-12,
+                 tp = sum(selected & edge), fp = sum(selected & !edge),
+                 n_edges = sum(edge), base_rate = mean(edge))
+    }))
+  }))
+  # Each replicate gets equal weight; precision is averaged over the replicates
+  # that select at least one edge.
+  path$recall <- path$tp / path$n_edges
+  path$precision <- ifelse(path$tp + path$fp > 0, path$tp / (path$tp + path$fp), NA)
+  mean_or_na <- function(x) if (all(is.na(x))) NA_real_ else mean(x, na.rm = TRUE)
+  curve <- aggregate(path[c("recall", "precision")],
+                     by = path[c("sign", "alignment", "rho")], FUN = mean_or_na)
+  bic <- aggregate(path[path$bic, c("recall", "precision")],
+                   by = path[path$bic, c("sign", "alignment")], FUN = mean_or_na)
+  colors <- c(coloc = "#176E9C", miss = "#C05A27")
+  dir.create(here("sim/output/figure"), recursive = TRUE, showWarnings = FALSE)
+  png(here("sim/output/figure", paste0("pr_curves_", prec_structure, ".png")),
+      width = 2600, height = 1200, res = 220)
+  par(mfrow = c(1, 2), mar = c(4.6, 4.7, 2.4, 0.8), oma = c(0.4, 0.2, 0.3, 0.2),
+      mgp = c(2.7, 0.78, 0), cex.axis = 1.12, cex.lab = 1.25, cex.main = 1.25)
+  for (sign in c("pos", "neg")) {
+    plot(NA_real_, xlim = c(0, 1.01), ylim = c(0, 1.01), xaxs = "i", yaxs = "i",
+         xlab = "Recall (true positive rate)", ylab = "Precision",
+         main = if (sign == "pos") "(a) Positive setting" else "(b) Negative setting")
+    abline(h = seq(0, 1, 0.2), v = seq(0, 1, 0.2), col = "#E9E9E9", lwd = 0.7)
+    abline(h = path$base_rate[path$sign == sign][1], col = "#777777", lty = 3, lwd = 1.8)
+    for (miss in c("coloc", "miss")) {
+      one <- curve[curve$sign == sign & curve$alignment == miss, ]
+      one <- one[order(one$rho, decreasing = TRUE), ]
+      lines(one$recall, one$precision, type = "b", pch = 21, bg = "white",
+            col = colors[[miss]], lty = if (miss == "coloc") 1 else 2, lwd = 2.7, cex = 1.1)
+      mark <- bic[bic$sign == sign & bic$alignment == miss, ]
+      if (is.finite(mark$precision))
+        points(mark$recall, mark$precision, pch = 23, cex = 1.8, lwd = 1.8,
+               bg = if (miss == "coloc") colors[[miss]] else "white", col = colors[[miss]])
+    }
+    if (sign == "neg")
+      legend("topright", bty = "n", cex = 0.86,
+             legend = c("Penalty path: colocated", "Penalty path: misaligned",
+                        "BIC: colocated", "BIC: misaligned", "Baseline"),
+             col = c(colors, colors, "#777777"), lty = c(1, 2, NA, NA, 3),
+             lwd = c(2.7, 2.7, NA, NA, 1.8), pch = c(21, 21, 23, 23, NA),
+             pt.bg = c("white", "white", colors[["coloc"]], "white", NA))
+  }
+  invisible(dev.off())
+})
 
 if (run_family_result) {
   message("non-Matern or mixed families detected (",

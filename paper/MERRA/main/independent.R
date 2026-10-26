@@ -29,6 +29,7 @@ metrics <- data.frame(fold, method = "IND", rho = NA_real_, mse = mean(err^2),
   norm = mean(sqrt(rowSums(err^2))), coverage = mean(abs(err) <= 1.96 * sqrt(pred_var)),
   pi_length = mean(3.92 * sqrt(pred_var)), sum_mse = mean(rowSums(err)^2),
   sum_coverage = mean(abs(rowSums(err)) <= 1.96 * sqrt(rowSums(pred_var))),
+  sum_pi_length = mean(3.92 * sqrt(rowSums(pred_var))),
   elapsed_min = as.numeric(difftime(Sys.time(), t0, units = "mins")))
 saveRDS(list(fold = fold, data_md5 = unname(tools::md5sum(merra_fold_file(fold))),
   fit = fit, prediction = pred_mean, pred_var = pred_var, metrics = metrics),

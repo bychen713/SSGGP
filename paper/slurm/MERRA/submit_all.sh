@@ -1,7 +1,7 @@
 #!/bin/bash
 # Submit every MERRA-2 fit. Run from paper/ after MERRA/prepare_folds.R:
 #   bash slurm/MERRA/submit_all.sh
-# Continue only nonconverged/interrupted process-specific-nugget LMC fits with:
+# Continue only nonconverged/interrupted LMC fits with:
 #   bash slurm/MERRA/submit_all.sh --continue-lmc
 # When all jobs have finished, collect the results with
 #   Rscript MERRA/result/summarize.R
@@ -20,20 +20,20 @@ test -f "$data_root/preprocessed_P${MERRA_P:-40}_uncentered.rds"
 if [[ ${1:-} == --continue-lmc ]]; then
   printf 'design\tstage\tjob_id\tdependency\tarray\n'
   for design in misaligned colocated; do
-    script=slurm/MERRA/lmc/process_nugget.sh
-    pn_dir=$out_root/$design/lmc_process_nugget
+    script=slurm/MERRA/lmc/$design.sh
+    lmc_dir=$out_root/$design/lmc
     for fold in 1 2 3; do
       test -f "$data_root/$design/fold${fold}.rds"
-      test -f "$pn_dir/pilot_fold${fold}.rds"
-      if [[ ! -f "$pn_dir/fit_fold${fold}.rds" &&
-            ! -f "$pn_dir/checkpoint_fold${fold}.rds" ]]; then
+      test -f "$lmc_dir/pilot_fold${fold}.rds"
+      if [[ ! -f "$lmc_dir/fit_fold${fold}.rds" &&
+            ! -f "$lmc_dir/checkpoint_fold${fold}.rds" ]]; then
         echo "No LMC state to continue for $design fold $fold" >&2
         exit 1
       fi
     done
     job=$(sbatch --parsable --export="ALL,MERRA_DESIGN=$design" --array=0-2 \
       --job-name="mfs-${design:0:1}lmc-cont" \
-      --output="$out_root/${design}-lmc-pn-continue-%A_%a.out" "$script" continue)
+      --output="$out_root/${design}-lmc-continue-%A_%a.out" "$script" continue)
     job=${job%%;*}
     printf '%s\tlmc_continue\t%s\t-\t0-2\n' "$design" "$job"
   done
@@ -46,7 +46,6 @@ for design in misaligned colocated; do
   done
   test ! -e "$out_root/$design/ssggp"
   test ! -e "$out_root/$design/lmc"
-  test ! -e "$out_root/$design/lmc_process_nugget"
   test ! -e "$out_root/$design/iox"
 done
 mkdir -p "$out_root"
@@ -81,8 +80,7 @@ submit_ssggp() {
 submit_ssggp misaligned mfs-m
 submit_ssggp colocated mfs-c
 
-# LMC: shared-nugget pilot -> shared-nugget fit -> process-specific-nugget pilot
-# -> process-specific-nugget fit and predict (the reported LMC).
+# LMC: pilot -> fit and predict.
 submit_lmc() {
   local design=$1 script=$2 label=$3
   local log=$out_root/${design}-lmc
@@ -95,15 +93,6 @@ submit_lmc() {
     --dependency="afterok:$pilot" --job-name="${label}-fit" \
     --output="$log-fit-%A_%a.out" "$script" fit)
   fit=${fit%%;*}; record "$design" lmc_fit "$fit" "afterok:$pilot" 0-2
-  local pn_pilot pn_fit pn=slurm/MERRA/lmc/process_nugget.sh
-  pn_pilot=$(sbatch --parsable --export="$common" --array=0-2 \
-    --dependency="afterok:$fit" --job-name="${label}-pn-pilot" \
-    --output="$log-pn-pilot-%A_%a.out" "$pn" pilot)
-  pn_pilot=${pn_pilot%%;*}; record "$design" lmc_pn_pilot "$pn_pilot" "afterok:$fit" 0-2
-  pn_fit=$(sbatch --parsable --export="$common" --array=0-2 \
-    --dependency="afterok:$pn_pilot" --job-name="${label}-pn-fit" \
-    --output="$log-pn-fit-%A_%a.out" "$pn" fit)
-  pn_fit=${pn_fit%%;*}; record "$design" lmc_pn_fit "$pn_fit" "afterok:$pn_pilot" 0-2
 }
 
 submit_lmc misaligned slurm/MERRA/lmc/misaligned.sh mfs-mlmc

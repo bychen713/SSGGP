@@ -3,7 +3,7 @@
 # Run from paper/ once all fits have finished:  Rscript MERRA/result/summarize.R
 #
 #   MERRA/output/prediction_by_fold.csv   one row per design x method x fold
-#   MERRA/output/prediction_mean.csv      averaged over folds
+#   MERRA/output/prediction_summary.csv   Table 4: mean (SD) over folds
 #
 # Methods: IND (independent processes), SSGGP dense and BIC-selected, LMC, and
 # IOX. Columns a method does not report are NA.
@@ -51,7 +51,7 @@ for (design in c("misaligned", "colocated")) {
                   sprintf("pred_%s_fold%d%s.rds", method, fold, merra_pred_suffix)),
         design)
     rows[[length(rows) + 1L]] <- read_metrics(
-      file.path(out, "lmc_process_nugget", sprintf("fit_fold%d.rds", fold)), design)
+      file.path(out, "lmc", sprintf("fit_fold%d.rds", fold)), design)
     rows[[length(rows) + 1L]] <- read_iox(out, fold, design)
   }
 }
@@ -62,15 +62,25 @@ rows <- lapply(rows, function(x) {
   x[all_names]
 })
 detail <- do.call(rbind, rows)
-numeric_names <- setdiff(names(detail)[vapply(detail, is.numeric, logical(1))], "fold")
-means <- aggregate(detail[numeric_names], detail[c("design", "method")],
-                   mean, na.rm = TRUE)
-means <- means[order(match(means$design, c("misaligned", "colocated"))), ]
+detail$sum_rmse <- sqrt(detail$sum_mse)   # per fold, before averaging
+
+# Table 4: mean (SD) over folds.
+metrics <- c(norm = "Norm", coverage = "Coverage", sum_rmse = "Sum RMSE",
+             sum_coverage = "Sum coverage", pi_length = "PI", sum_pi_length = "PI sum")
+summary <- do.call(rbind, lapply(split(detail, detail[c("design", "method")], drop = TRUE),
+  function(x) data.frame(design = x$design[1], method = x$method[1],
+    metric = unname(metrics),
+    value = sprintf("%.3f (%.3f)", vapply(names(metrics), function(m) mean(x[[m]]), 1),
+                    vapply(names(metrics), function(m) stats::sd(x[[m]]), 1)))))
+summary <- reshape(summary, idvar = c("design", "metric"), timevar = "method",
+                   direction = "wide")
+names(summary) <- sub("^value\\.", "", names(summary))
+summary <- summary[order(match(summary$design, c("colocated", "misaligned")),
+                         match(summary$metric, metrics)), ]
 
 write.csv(detail, file.path(merra_output_base, "prediction_by_fold.csv"), row.names = FALSE)
-write.csv(means, file.path(merra_output_base, "prediction_mean.csv"), row.names = FALSE)
-print(means[c("design", "method", "mse", "coverage", "pi_length",
-              "sum_mse", "sum_coverage")], digits = 4, row.names = FALSE)
+write.csv(summary, file.path(merra_output_base, "prediction_summary.csv"), row.names = FALSE)
+print(summary, row.names = FALSE)
 
 source("MERRA/result/report.R")
 write_merra_report()

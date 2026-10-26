@@ -274,7 +274,8 @@ widen <- function(d, cols = method_cols) {
 
 by_method_wide <- widen(by_method)
 
-# Bias and SD of estimation errors, pooled within covariance families.
+# Average process errors within each family and replicate, then report the
+# mean and SD across replicates.
 err_by_family <- function(d, cols = method_cols) {
   if (is.null(d) || !nrow(d)) return(NULL)
   keep <- d$comparable & is.finite(d$estimate) & is.finite(d$truth)
@@ -298,10 +299,15 @@ err_by_family <- function(d, cols = method_cols) {
                                           max(x$truth)),
                       stringsAsFactors = FALSE)
     for (mth in cols) {
-      e <- x$estimate[x$method == mth] - x$truth[x$method == mth]
-      row[[paste0("bias_", mth)]] <- if (length(e)) mean(e) else NA_real_
-      # pooled over processes, whose true values differ
-      row[[paste0("sd_", mth)]]   <- if (length(e) > 1L) stats::sd(e) else NA_real_
+      xm <- x[x$method == mth, , drop = FALSE]
+      replicate_error <- if (!nrow(xm)) numeric() else
+        vapply(split(seq_len(nrow(xm)), xm$sim), function(ii)
+          mean(xm$estimate[ii] - xm$truth[ii]), numeric(1))
+      row[[paste0("bias_", mth)]] <- if (length(replicate_error))
+        mean(replicate_error) else NA_real_
+      row[[paste0("sd_", mth)]] <- if (length(replicate_error) > 1L)
+        stats::sd(replicate_error) else NA_real_
+      row[[paste0("n_rep_", mth)]] <- length(replicate_error)
     }
     row
   }))
@@ -349,8 +355,8 @@ if (!is.null(by_method_wide)) {
 }
 
 if (!is.null(err_wide)) {
-  cat("\n================ error by family: pooled over processes and ",
-      "replicates ================\n", sep = "")
+  cat("\n================ error by family: process mean within replicate, ",
+      "then mean and SD over replicates ================\n", sep = "")
   for (s in unique(err_wide$setting)) {
     x <- err_wide[err_wide$setting == s, , drop = FALSE]
     x$setting <- NULL

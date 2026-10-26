@@ -80,7 +80,7 @@ get_result <- function(result, approach){
     
     norm_ind <- mean(apply((Y_mat_test_ind-Y_mat_pred_ind),1,function(x) sqrt(sum(x^2))))
     mse_ind <- apply((Y_mat_test_ind-Y_mat_pred_ind)**2,2,mean)
-    var_ind <- colMeans(coverage_var_ind)
+    var_ind <- colMeans(sqrt(coverage_var_ind))   # mean predictive SD
     
     # inference
     coverage_ind <- vector("list",P)
@@ -93,7 +93,7 @@ get_result <- function(result, approach){
     # sum of the processes
     mse_sum_ind <- mean((rowSums(Y_mat_test_ind)-rowSums(Y_mat_pred_ind))**2)
     coverage_sum_var_ind <- rowSums(coverage_var_ind)
-    varsum_ind <- mean(coverage_sum_var_ind)
+    varsum_ind <- mean(sqrt(coverage_sum_var_ind))
     
     coveragesum_ind <- rowSums(Y_mat_pred_ind)-1.96*sqrt(coverage_sum_var_ind)<=rowSums(Y_mat_test_ind) & 
       rowSums(Y_mat_test_ind)<=rowSums(Y_mat_pred_ind)+1.96*sqrt(coverage_sum_var_ind)
@@ -137,7 +137,7 @@ get_result <- function(result, approach){
     
     norm_lmc <- mean(apply((Y_mat_test_lmc-Y_mat_pred_lmc),1,function(x) sqrt(sum(x^2))))
     mse_lmc <- apply((Y_mat_test_lmc-Y_mat_pred_lmc)**2,2,mean)
-    var_lmc <- colMeans(coverage_var_lmc)
+    var_lmc <- colMeans(sqrt(coverage_var_lmc))   # mean predictive SD
     
     # inference
     coverage_lmc <- vector("list",P)
@@ -151,7 +151,7 @@ get_result <- function(result, approach){
     mse_sum_lmc <- mean((rowSums(Y_mat_test_lmc)-rowSums(Y_mat_pred_lmc))**2)
     # Variance of the sum is 1' Sigma 1 over the full predictive covariance.
     coverage_sum_var_lmc <- vapply(result$pred_var[mask], sum, numeric(1))
-    varsum_lmc <- mean(coverage_sum_var_lmc)
+    varsum_lmc <- mean(sqrt(coverage_sum_var_lmc))
     
     coveragesum_lmc <- rowSums(Y_mat_pred_lmc)-1.96*sqrt(coverage_sum_var_lmc)<=rowSums(Y_mat_test_lmc) & 
       rowSums(Y_mat_test_lmc)<=rowSums(Y_mat_pred_lmc)+1.96*sqrt(coverage_sum_var_lmc)
@@ -212,12 +212,12 @@ get_result <- function(result, approach){
         Y_mat_test[,k]<=Y_mat_pred_approx_gibbs[,k]+1.96*sqrt(pred_var_approx_gibbs[,k])
     }
     coverage_approx_gibbs <- unlist(lapply(coverage_approx_gibbs,mean))
-    var_approx_gibbs <- colMeans(pred_var_approx_gibbs)
+    var_approx_gibbs <- colMeans(sqrt(pred_var_approx_gibbs))   # mean predictive SD
     
     # sum of the processes
     mse_sum_approx_gibbs <- mean((rowSums(Y_mat_test)-rowSums(Y_mat_pred_approx_gibbs))**2)
     coverage_sum_var_approx_gibbs <- unlist(lapply(1:n_test,function(x){as.vector(t(rep(1,P))%*%result$pred_var_gibbs[((1:P)+P*(x-1)),((1:P)+P*(x-1))]%*%rep(1,P))}))
-    varsum_approx_gibbs <- mean(coverage_sum_var_approx_gibbs)
+    varsum_approx_gibbs <- mean(sqrt(coverage_sum_var_approx_gibbs))
     coveragesum_approx_gibbs <- rowSums(Y_mat_pred_approx_gibbs)-1.96*sqrt(coverage_sum_var_approx_gibbs)<=rowSums(Y_mat_test) &
       rowSums(Y_mat_test)<=rowSums(Y_mat_pred_approx_gibbs)+1.96*sqrt(coverage_sum_var_approx_gibbs)
     coveragesum_approx_gibbs <- sum(coveragesum_approx_gibbs)/n_test

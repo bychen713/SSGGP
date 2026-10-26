@@ -103,11 +103,11 @@ for (fold in 1:n_folds) {
 }
 mean(time)
 
-# Prediction summaries: mean and SD across replicates
+# Prediction summaries: mean and SD across replicates of each replicate's value
 fold_metrics <- list(
   "Residual norm"                = avg_norm_resid_folds,
-  "Individual 95% coverage"      = unlist(coverage_ind_proc),
-  "Individual 95% int. length"   = unlist(intlen_ind_proc),
+  "Individual 95% coverage"      = avg_coverage_ind_folds,
+  "Individual 95% int. length"   = avg_intlen_ind_folds,
   "Sum RMSE"                     = rmse_sum_folds,
   "Sum 95% coverage"             = coverage_sum_folds,
   "Sum 95% int. length"          = intlen_sum_folds
@@ -124,10 +124,12 @@ rownames(results) <- NULL
 print(results, digits = 6)
 
 cat("\n-- mean (sd) over", n_folds, "folds --\n")
-print(data.frame(metric = results$metric,
-                 value  = sprintf("%.3f (%.3f)", results$mean, results$sd),
-                 stringsAsFactors = FALSE),
-      row.names = FALSE)
+iox_tab <- data.frame(metric = results$metric,
+                      IOX = sprintf("%.3f (%.3f)", results$mean, results$sd))
+print(iox_tab, row.names = FALSE)
+table_dir <- here("sim", "output", "tables", setting_name)
+dir.create(table_dir, recursive = TRUE, showWarnings = FALSE)
+write.csv(iox_tab, file.path(table_dir, "prediction_iox.csv"), row.names = FALSE)
 
 # Parameter summaries averaged across folds
 theta_param_names <- c("phi", "sigmasq", "nu", "nugget")

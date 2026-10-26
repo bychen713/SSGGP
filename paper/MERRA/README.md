@@ -21,8 +21,7 @@ MERRA/
 ├── preprocess_and_eda.R    raw NetCDF -> data/preprocessed_P40.rds
 ├── prepare_folds.R         -> data/{misaligned,colocated}/fold[1-3].rds
 ├── main/                   SSGGP: independent.R, joint.R
-├── lmc/                    LMC: shared-nugget fit (misaligned.R, colocated.R),
-│                           then the reported process-nugget fit (process_nugget.R)
+├── lmc/                    LMC: misaligned.R, colocated.R
 ├── iox/                    IOX: run.R
 └── result/                 summarize.R (tables and figures)
 ```
@@ -54,10 +53,11 @@ Rscript MERRA/result/summarize.R        # after the jobs finish
 
 `summarize.R` writes to `output/`:
 
-- `prediction_by_fold.csv` and `prediction_mean.csv`
+- `prediction_by_fold.csv` and `prediction_summary.csv` (Table 4)
 - `estimation_by_fold.csv` and `estimation_median.csv`: fitted parameters by fold
   and medians across folds for IND, dense and BIC SSGGP, LMC, and IOX
+- `estimation_summary.csv` (Table S8)
 - `figure/correlation.png`: empirical residual correlation
-- `figure/precision.png`: sample precision from colocated training folds and
-  fold-median dense and BIC SSGGP precision matrices for both designs
+- `figure/precision_colocated_{sample,bic,dense}.png` (Figure 4): fold-median
+  colocated precision matrices
 - `figure/data_maps.png`: raw and processed values for processes 1, 20, and 40

@@ -60,17 +60,34 @@ must exist before calling `sbatch` directly.
 
 ## Tables and figures
 
-Simulation outputs go to `sim/output/tables/<setting>/` and
-`sim/output/figure/<setting>/`:
+Every table and figure is made from saved results, with no fitting. Run each
+command from `paper/` with the setting variables of the listed settings (see
+[Simulation](#simulation)). Simulation tables go to `sim/output/tables/<setting>/`
+and figures to `sim/output/figure/<setting>/`; MERRA-2 outputs go to
+`MERRA/output/` and `MERRA/output/figure/`. Table entries are mean (SD) over
+replicates (simulation) or folds (MERRA-2) unless noted.
 
-- `sim/result/sim_paper_figures.R`: Figure 2 precision–recall curve and Figure S1 simulated fields (`Rscript sim/result/sim_paper_figures.R`).
-- `sim/result/sim_likelihood_error.R`: Figure S2 likelihood error against a 5,000-feature Monte Carlo reference (`Rscript sim/result/sim_likelihood_error.R`).
-- `sim/result/sim_result.R`: simulation tables, precision/correlation figures, and Figure S3 traces (2×4: Matérn, CH, precision norm, nugget); the grid is written after both observation designs finish.
-- `sim/result/sim_result_est.R`: family-specific estimation tables.
-- `sim/result/sim_iox_result.R`: IOX comparison.
-- `MERRA/result/summarize.R`: prediction tables, Figure 4 precision (entrywise medians of three folds), and Table S8 fitted-parameter medians (`Rscript MERRA/result/summarize.R`). The sample precision uses each colocated fold's 500 training locations; the three matrices are summarized entrywise and shown for both designs.
+| Paper | Settings | Command | Output |
+|---|---|---|---|
+| Table 1, Fig. 1 | `random_{pos,neg}_coloc_mix` | `Rscript sim/result/sim_result.R` | `covariance_estimation_error.csv`; `correlation.png`, `precision.png`, `sigmainv_prec_{BIC,dense}.png` |
+| Tables 2, 3 | `random_{pos,neg}_{coloc,miss}_mix` | `sim_result.R`; `sim_iox_result.R` | `prediction.csv` (Penalized = BIC, Dense, Ind, LMC); `prediction_iox.csv` |
+| Fig. 2 | the four `random_*_mix` settings | `sim_result.R` (drawn once all four exist) | `sim/output/figure/pr_curves_random.png` |
+| Fig. S1 | `random_pos_coloc_mix` | `sim_result.R` | `processes_1_21.png` |
+| Fig. S2 | – | `Rscript sim/result/plot_sensitivity_L.R RESULTS_DIR` | `sim/output/figure/sensitivity_L_mixed_p{9,25,50}.png` |
+| Fig. S3 | `random_{pos,neg}_coloc_mix` | `SSGGP_COMPUTE_DIAGNOSTIC_LOGLIK=true Rscript sim/result/sim_result.R` | `diagnostics/*.png` |
+| Table S1 | all | `sim_result.R` | `computation_time.csv` |
+| Table S2 | `random_{pos,neg}_{coloc,miss}_mix` | `sim_result.R` | `graph_recovery.csv` |
+| Table S3 | `random_{pos,neg}_miss_mix` | `sim_result.R` | `covariance_estimation_error.csv` |
+| Table S4, Fig. S4 | `tridiagonal_{pos,neg}_coloc_mix` | `sim_result.R` | `covariance_estimation_error.csv`; figures as Fig. 1 |
+| Table S5 | `tridiagonal_{pos,neg}_{coloc,miss}_mix` | `sim_result.R`; `sim_iox_result.R` | `prediction.csv`; `prediction_iox.csv` |
+| Tables S6, S7 | all-Matérn (`SSGGP_FAMILY=matern`): random (S6), tridiagonal (S7) | `sim_result.R`; `sim_iox_result.R` | `estimation_error.csv`; `prediction.csv`; `prediction_iox.csv` |
+| Table 4 | – | `Rscript MERRA/result/summarize.R` | `prediction_summary.csv` |
+| Fig. 3 | – | `summarize.R` | `data_maps.png` |
+| Fig. 4 | – | `summarize.R` | `precision_colocated_{sample,bic,dense}.png` |
+| Table S8 | – | `summarize.R` | `estimation_summary.csv` (medians over folds of within-fold means) |
 
-MERRA outputs go to `MERRA/output/`; figures go to `MERRA/output/figure/`.
+Fig. S2 plots saved results of the likelihood-error experiment: `RESULTS_DIR`
+holds `mixed_p9/`, `mixed_p25/` and `mixed_p50/` (see the script header).
 
 ## Simulation
 

@@ -100,6 +100,7 @@ proposal_pred <- matern_proposal(a = 3, nu = 1.25)   # may differ from the above
 
 # Likelihood and prediction
 L_ll      <- 1000         # features for the marginal likelihood
+L_ll_diag <- 10000        # features for the diagnostic likelihood traces
 L_pred    <- 50000        # features for prediction
 MC_pred   <- 10000        # Gibbs sweeps for prediction (the first half is burn-in)
 seed_ll   <- 1L           # shared across penalties so the BIC comparison is paired
