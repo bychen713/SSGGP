@@ -508,7 +508,8 @@ summarize_results <- function() {
     arrange(variable, missing_TF, desc(prec_structure), desc(offdiag_sign)) %>%
     select(variable, missing_TF, prec_structure, offdiag_sign, any_of(ordered_cols))
 
-  # Estimation error against each process's true parameters.
+  # Estimation error against each process's true parameters: calculate bias and
+  # SD across replicates per process, then average those biases and SDs.
   truth_by_process <- function(par) vapply(seq_len(P), function(j) {
     v <- f_par_true[[j]]
     if (!is.null(v) && par %in% names(v)) as.numeric(v[[par]]) else NA_real_
@@ -544,7 +545,6 @@ summarize_results <- function() {
                   max(truth_vec, na.rm = TRUE))
 
       err_list[[length(err_list) + 1]] <- results_df %>%
-        mutate(replicate = row_number()) %>%
         pivot_longer(cols = starts_with(paste0(variable, "_"))) %>%
         mutate(
           method = case_when(
@@ -560,12 +560,13 @@ summarize_results <- function() {
                                shared_truth, truth_vec[process])
         ) %>%
         filter(!is.na(method), is.finite(err)) %>%
-        group_by(method, replicate) %>%
-        summarise(replicate_error = mean(err), .groups = "drop") %>%
+        group_by(method, name) %>%
+        summarise(process_bias = mean(err), process_sd = stats::sd(err),
+                  .groups = "drop") %>%
         group_by(method) %>%
         summarise(
-          bias = mean(replicate_error),
-          sd   = stats::sd(replicate_error),
+          bias = mean(process_bias),
+          sd   = mean(process_sd),
           .groups = "drop"
         ) %>%
         mutate(
@@ -591,8 +592,8 @@ summarize_results <- function() {
     select(variable, missing_TF, prec_structure, offdiag_sign, truth,
            any_of(ordered_err))
 
-  cat("\n================ error against the truth: process mean within replicate, ",
-      "then bias and SD over replicates ================\n\n", sep = "")
+  cat("\n================ error against the truth: bias and SD over replicates per process, ",
+      "then averaged over processes ================\n\n", sep = "")
   old_width <- options(width = 200)
   print(as.data.frame(err_wide %>% mutate(across(where(is.numeric), \(z) round(z, 4)))),
         row.names = FALSE, na.print = "-")

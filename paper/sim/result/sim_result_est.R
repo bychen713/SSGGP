@@ -2,6 +2,8 @@
 #   Rscript sim/result/sim_result_est.R       (also sourced by sim_result.R)
 # Reads fit$f_par from the joint and independent fits and the BIC files for the
 # selected penalty. Tables go to sim/output/tables/<setting>/.
+# Family errors average process-specific biases and SDs across replicates,
+# including the shared or process-specific nugget.
 
 if (sys.nframe() == 0L) rm(list = ls())   # only when run as a script
 if (!file.exists("settings.R")) {  # work from sim/, where settings.R lives
@@ -25,7 +27,7 @@ use_converged_only <- FALSE
 # True parameters, one row per (process, parameter).
 true_long <- do.call(rbind, lapply(seq_len(P), function(j) {
   fam <- if (is.character(f_fun_true[[j]])) f_fun_true[[j]] else NA_character_
-  par <- f_par_true[[j]]
+  par <- c(f_par_true[[j]], nugget = rep_len(nugget_true, P)[j])
   # par_order keeps each family's own parameter order in every table.
   data.frame(process = j, family_true = fam, parameter = names(par),
              par_order = seq_along(par),
@@ -49,10 +51,14 @@ collect_one <- function(prec_structure, offdiag_sign, missing_TF) {
   }
 
   # One row per (process, parameter) of a fit.
-  unpack <- function(f_par, fam_fit) {
+  unpack <- function(f_par, fam_fit, nugget) {
+    if (!length(nugget) %in% c(1L, P))
+      stop("Expected one shared nugget or one nugget per process")
+    nugget <- rep_len(nugget, P)
     do.call(rbind, lapply(seq_len(P), function(j) {
       est <- f_par[[j]]
       if (is.null(est) || is.null(names(est))) return(NULL)
+      est <- c(est, nugget = as.numeric(nugget[j]))
       data.frame(process    = j,
                  family_fit = fam_fit[[j]],
                  parameter  = names(est),
@@ -82,7 +88,7 @@ collect_one <- function(prec_structure, offdiag_sign, missing_TF) {
     fam_fit <- fit_obj$spec$family
     if (is.null(fam_fit)) fam_fit <- rep(NA_character_, P)
 
-    d <- unpack(fit_obj$f_par, fam_fit)
+    d <- unpack(fit_obj$f_par, fam_fit, fit_obj$nugget)
     if (is.null(d)) next
     d$setting   <- setting_name
     d$method    <- "saem"
@@ -107,7 +113,9 @@ collect_one <- function(prec_structure, offdiag_sign, missing_TF) {
     fam_fit <- result_ind$fit$spec$family
     if (is.null(fam_fit)) fam_fit <- rep("matern", P)
 
-    d <- unpack(result_ind$f_par, fam_fit)
+    nugget <- result_ind$nugget
+    if (is.null(nugget)) nugget <- result_ind$fit$nugget
+    d <- unpack(result_ind$f_par, fam_fit, nugget)
     if (is.null(d)) next
     d$setting   <- setting_name
     d$method    <- "ind"
@@ -274,8 +282,9 @@ widen <- function(d, cols = method_cols) {
 
 by_method_wide <- widen(by_method)
 
-# Average process errors within each family and replicate, then report the
-# mean and SD across replicates.
+# Calculate bias and SD across replicates separately for each process, then
+# average those biases and SDs within each family and parameter. Repeating a
+# shared nugget over processes leaves its across-replicate bias and SD intact.
 err_by_family <- function(d, cols = method_cols) {
   if (is.null(d) || !nrow(d)) return(NULL)
   keep <- d$comparable & is.finite(d$estimate) & is.finite(d$truth)
@@ -300,14 +309,12 @@ err_by_family <- function(d, cols = method_cols) {
                       stringsAsFactors = FALSE)
     for (mth in cols) {
       xm <- x[x$method == mth, , drop = FALSE]
-      replicate_error <- if (!nrow(xm)) numeric() else
-        vapply(split(seq_len(nrow(xm)), xm$sim), function(ii)
-          mean(xm$estimate[ii] - xm$truth[ii]), numeric(1))
-      row[[paste0("bias_", mth)]] <- if (length(replicate_error))
-        mean(replicate_error) else NA_real_
-      row[[paste0("sd_", mth)]] <- if (length(replicate_error) > 1L)
-        stats::sd(replicate_error) else NA_real_
-      row[[paste0("n_rep_", mth)]] <- length(replicate_error)
+      process_errors <- split(xm$estimate - xm$truth, xm$process)
+      row[[paste0("bias_", mth)]] <- if (length(process_errors))
+        mean(vapply(process_errors, mean, numeric(1))) else NA_real_
+      row[[paste0("sd_", mth)]] <- if (length(process_errors))
+        mean(vapply(process_errors, stats::sd, numeric(1))) else NA_real_
+      row[[paste0("n_rep_", mth)]] <- length(unique(xm$sim))
     }
     row
   }))
@@ -355,8 +362,8 @@ if (!is.null(by_method_wide)) {
 }
 
 if (!is.null(err_wide)) {
-  cat("\n================ error by family: process mean within replicate, ",
-      "then mean and SD over replicates ================\n", sep = "")
+  cat("\n================ error by family: bias and SD over replicates per process, ",
+      "then averaged over processes ================\n", sep = "")
   for (s in unique(err_wide$setting)) {
     x <- err_wide[err_wide$setting == s, , drop = FALSE]
     x$setting <- NULL

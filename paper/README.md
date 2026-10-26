@@ -72,7 +72,8 @@ saved results using the active [simulation settings](#simulation).
 
 Simulation tables and figures go to `sim/output/tables/<setting>/` and
 `sim/output/figure/`; MERRA-2 outputs go to `MERRA/output/`. Generated files
-are not versioned. Table entries are mean (SD) across replicates or folds;
+are not versioned. Prediction entries are mean (SD) across replicates or folds.
+Estimation errors average process-specific biases and SDs across replicates;
 Table S8 uses medians across folds of within-fold means.
 
 Fig. 2 needs all four mixed-family random-precision settings (sign × alignment).
