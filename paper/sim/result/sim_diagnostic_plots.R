@@ -265,9 +265,9 @@ plot_simulation_diagnostics <- function(out_dir, fig_dir, setting_name,
   trace_grid <- list()
   for (family in intersect(c("matern", "ch"), unique(family_names))) {
     traces <- lapply(fits, .microergodic_trace, family = family)
-    # Average replicate-specific log10 scales for each process, retaining the
-    # between-process trajectories in the plot.
-    values <- t(Reduce(`+`, lapply(traces, log10)) / length(traces))
+    # One column per replicate: average log10 scales over that family's
+    # processes first. Thin curves and the mean +/- SD band are over replicates.
+    values <- vapply(traces, function(x) colMeans(log10(x)), numeric(n_iter))
     path <- file.path(fig_dir, paste0(family, "_microergodic.png"))
     .draw_trace_plot(path, values, ylab = "log10 microergodic scale")
     trace_grid[[family]] <- values

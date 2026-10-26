@@ -36,6 +36,13 @@ for (fold in 1:n_folds) {
   iox_dir <- file.path(folder_results, "iox")
   pred  <- readRDS(file.path(iox_dir, paste0("pred_fold", fold, ".rds")))
   saved <- readRDS(file.path(iox_dir, paste0("fit_fold", fold, ".rds")))
+  # Use exactly the prediction window: 7501:10000 in the paper runs.
+  posterior_keep <- pred$keep
+  n_chain <- dim(saved$fit$Theta)[3L]
+  stopifnot(length(posterior_keep) >= 2L,
+            length(posterior_keep) == dim(pred$draws)[3L],
+            identical(posterior_keep,
+                      tail(seq_len(n_chain), length(posterior_keep))))
   data_env <- new.env()
   load(file.path(data_dir, paste0(fold, ".RData")), envir = data_env)
   Y_out <- as.matrix(data_env$Y_mat_test)
@@ -84,18 +91,18 @@ for (fold in 1:n_folds) {
   # Posterior summaries of theta (rows phi, sigmasq, nu, nugget) and Sigma
   theta_mcmc <- spiox_out$theta
 
-  # Last 5000 draws, the same for theta and Sigma (their product is used below).
-  last5000 <- tail(seq_len(dim(theta_mcmc)[3]), 5000)
-  theta_mcmc_last <- theta_mcmc[, , last5000, drop = FALSE]   # 4 x q x 5000
+  # Last 2500 draws in the paper runs, aligned with prediction for theta,
+  # nugget and Sigma (whose per-draw product is used below).
+  theta_mcmc_last <- theta_mcmc[, , posterior_keep, drop = FALSE]
   theta_mean_folds[[fold]] <- apply(theta_mcmc_last, 1:2, mean)   # 4 x q
   theta_sd_folds[[fold]]   <- apply(theta_mcmc_last, 1:2, sd)     # 4 x q
 
-  Sigma_mcmc <- spiox_out$Sigma[, , last5000, drop = FALSE]   # q x q x 5000
+  Sigma_mcmc <- spiox_out$Sigma[, , posterior_keep, drop = FALSE]
   Sigma_mean_folds[[fold]] <- apply(Sigma_mcmc, 1:2, mean)  # q x q
   Sigma_sd_folds[[fold]]   <- apply(Sigma_mcmc, 1:2, sd)    # q x q
 
   # IOX marginal variance is theta[2, j] * Sigma[j, j].
-  Sigma_diag <- apply(Sigma_mcmc, 3, diag)                  # q x 5000
+  Sigma_diag <- apply(Sigma_mcmc, 3, diag)                  # q x retained draws
   var_id_folds[[fold]] <- rowMeans(theta_mcmc_last[2, , ] * Sigma_diag)
   nugget_mean_folds[[fold]] <- theta_mean_folds[[fold]][4, ]
 
