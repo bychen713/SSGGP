@@ -13,30 +13,41 @@
 #'
 #' @param object An `ssggp_fit` from [fit()].
 #' @param L Number of random Fourier features. The likelihood is evaluated
-#'   exactly for these features, by Woodbury on an \eqn{(Lp) \times (Lp)}
-#'   sparse Cholesky.
+#'   exactly for these features using the calculation selected by `method`.
 #' @param seed Optional integer seed for the feature draw.
 #' @param g Proposal from [matern_proposal()]; `NULL` inherits the fit's.
 #' @param numerical_guard As in [fit()]; `NULL` inherits the fit's.
 #' @param threads Thread cap for the duration of the call; see [fit()].
+#' @param method Calculation to use. `"auto"` uses Woodbury when `L * p` is
+#'   smaller than the number of observed entries in `Y`, and otherwise directly
+#'   factors the observed-data covariance. `"woodbury"` and `"observed"` force
+#'   the respective calculation. Both evaluate the same finite-feature model;
+#'   the dimension comparison is a heuristic, since sparsity also affects cost.
 #' @param ... Unused.
 #' @return An object of class `logLik`. `df` is the number of **selected
 #'   edges**, \eqn{k=\sum_{i<j}\mathbb{1}(\hat\eta_{ij}\neq 0)}: strictly
 #'   off-diagonal, so the diagonal and the process-specific parameters -- whose
 #'   dimension is constant across the penalty grid -- are excluded. `nobs` is
-#'   the number of observations.
+#'   the number of observed entries. Attributes `computation`, `system_dim`,
+#'   `feature_dim`, and `observed_dim` record the calculation and its dimensions.
 #' @export
 logLik.ssggp_fit <- function(object, L = 1000, seed = NULL,
                              g = NULL,
                              threads = getOption("SSGGP.threads", 5L),
-                             numerical_guard = NULL, ...) {
+                             numerical_guard = NULL,
+                             method = c("auto", "woodbury", "observed"), ...) {
+  method <- match.arg(method)
   with_threads(resolve_threads(threads),
-               loglik_impl(object, L, seed, g, numerical_guard))
+               loglik_impl(object, L, seed, g, numerical_guard, method))
 }
 
 #' @keywords internal
 #' @noRd
-loglik_impl <- function(object, L, seed, g, numerical_guard = NULL) {
+loglik_impl <- function(object, L, seed, g, numerical_guard = NULL,
+                        method = "auto") {
+  if (!is.numeric(L) || length(L) != 1L || is.na(L) || !is.finite(L) ||
+      L < 1 || L != floor(L) || L > .Machine$integer.max)
+    stop("`L` must be one positive integer", call. = FALSE)
   sp <- object$spec
   P  <- sp$P
   if (is.null(g)) g <- sp$g
@@ -50,20 +61,32 @@ loglik_impl <- function(object, L, seed, g, numerical_guard = NULL) {
   obs_idx <- which(!is.na(Y_reordered))
   Y_obs   <- Y_reordered[obs_idx]
   proc_id <- rep(seq_len(P), n)[obs_idx]
+  observed_dim <- length(Y_obs)
+  feature_dim <- as.double(L) * P
+  if (!observed_dim || any(!is.finite(Y_obs)))
+    stop("`Y` must contain finite observed values", call. = FALSE)
+  if (method == "auto")
+    method <- if (feature_dim < observed_dim) "woodbury" else "observed"
 
   nug <- object$nugget
   if (length(nug) == 1L) nug <- rep(nug, P)
+  if (length(nug) != P || any(!is.finite(nug)) || any(nug <= 0))
+    stop("fitted nuggets must be finite and strictly positive", call. = FALSE)
   d_obs <- nug[proc_id]
 
   if (!is.null(seed)) set.seed(seed)
   feat <- draw_features(L, sp$d, g)
-  ff   <- rff(locs, feat$X, feat$phi, P)
-  A_obs <- ff$A[obs_idx, , drop = FALSE]
+  ff   <- rff(locs, feat$X, feat$phi, P, need_A = method == "woodbury")
 
   gvals <- vapply(feat$X, g$d, numeric(1))
   M <- build_M_for_fit(object, feat$X, gvals, g, numerical_guard)
 
-  val <- ll_cpp(M, as_dgc(object$sigma_inv), as_dgc(A_obs), Y_obs, d_obs)
+  val <- if (method == "woodbury") {
+    A_obs <- ff$A[obs_idx, , drop = FALSE]
+    ll_cpp(M, as_dgc(object$sigma_inv), as_dgc(A_obs), Y_obs, d_obs)
+  } else {
+    observed_loglik(Y, as.matrix(ff$c_vals), M, object$sigma_inv, nug)
+  }
 
   # selected edges, each counted once
   si <- object$sigma_inv
@@ -71,8 +94,42 @@ loglik_impl <- function(object, L, seed, g, numerical_guard = NULL) {
 
   structure(val, class = "logLik",
             df = k,
-            nobs = length(Y_obs),
-            L = L)
+            nobs = observed_dim,
+            L = L,
+            computation = method,
+            system_dim = if (method == "woodbury") feature_dim else observed_dim,
+            feature_dim = feature_dim,
+            observed_dim = observed_dim)
+}
+
+# Direct covariance of the observed entries, in process-major order. Each
+# process pair has covariance Sigma[j,k] * C_j diag(1/(M_j M_k)) C_k^T.
+# Only the upper triangle is needed by chol(). Empty processes contribute no
+# rows; their marginal covariance is still taken from the full precision.
+observed_loglik <- function(Y, C, M, sigma_inv, nugget) {
+  P <- ncol(Y)
+  obs <- lapply(seq_len(P), function(j) which(!is.na(Y[, j])))
+  count <- lengths(obs)
+  offsets <- c(0L, cumsum(count))
+  rows <- lapply(seq_len(P), function(j) offsets[j] + seq_len(count[j]))
+  active <- which(count > 0L)
+  V <- lapply(seq_len(P), function(j)
+    sweep(C[obs[[j]], , drop = FALSE], 2L, M[, j], "/"))
+  y <- unlist(lapply(seq_len(P), function(j) Y[obs[[j]], j]),
+              use.names = FALSE)
+  Sigma <- chol2inv(chol(as.matrix(sigma_inv)))
+  N <- length(y)
+  K <- matrix(0, N, N)
+  for (j in active) {
+    for (k in active[active >= j]) {
+      if (Sigma[j, k] == 0) next
+      K[rows[[j]], rows[[k]]] <- Sigma[j, k] * tcrossprod(V[[j]], V[[k]])
+    }
+  }
+  diag(K) <- diag(K) + rep(nugget, count)
+  R <- chol(K)
+  z <- backsolve(R, y, transpose = TRUE)
+  -0.5 * (N * log(2 * pi) + 2 * sum(log(diag(R))) + sum(z * z))
 }
 
 #' Select the graphical LASSO penalty by AIC

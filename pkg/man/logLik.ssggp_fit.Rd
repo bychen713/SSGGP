@@ -11,6 +11,7 @@
   g = NULL,
   threads = getOption("SSGGP.threads", 5L),
   numerical_guard = NULL,
+  method = c("auto", "woodbury", "observed"),
   ...
 )
 }
@@ -18,8 +19,7 @@
 \item{object}{An \code{ssggp_fit} from \code{\link[=fit]{fit()}}.}
 
 \item{L}{Number of random Fourier features. The likelihood is evaluated
-exactly for these features, by Woodbury on an \eqn{(Lp) \times (Lp)}
-sparse Cholesky.}
+exactly for these features using the calculation selected by \code{method}.}
 
 \item{seed}{Optional integer seed for the feature draw.}
 
@@ -29,6 +29,12 @@ sparse Cholesky.}
 
 \item{numerical_guard}{As in \code{\link[=fit]{fit()}}; \code{NULL} inherits the fit's.}
 
+\item{method}{Calculation to use. \code{"auto"} uses Woodbury when \code{L * p} is
+smaller than the number of observed entries in \code{Y}, and otherwise directly
+factors the observed-data covariance. \code{"woodbury"} and \code{"observed"} force
+the respective calculation. Both evaluate the same finite-feature model;
+the dimension comparison is a heuristic, since sparsity also affects cost.}
+
 \item{...}{Unused.}
 }
 \value{
@@ -36,7 +42,8 @@ An object of class \code{logLik}. \code{df} is the number of \strong{selected
 edges}, \eqn{k=\sum_{i<j}\mathbb{1}(\hat\eta_{ij}\neq 0)}: strictly
 off-diagonal, so the diagonal and the process-specific parameters -- whose
 dimension is constant across the penalty grid -- are excluded. \code{nobs} is
-the number of observations.
+the number of observed entries. Attributes \code{computation}, \code{system_dim},
+\code{feature_dim}, and \code{observed_dim} record the calculation and its dimensions.
 }
 \description{
 Evaluates the log-likelihood of the observed data after integrating out the

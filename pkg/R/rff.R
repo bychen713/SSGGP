@@ -14,7 +14,8 @@
 #' @param P Number of processes.
 #' @param need_A Build `A`, which costs `O(n L P)` memory. [fit()] and
 #'   [predict.ssggp_fit()] work from `c_vals` alone unless
-#'   `options(SSGGP.force_general = TRUE)`; `logLik()` needs `A`.
+#'   `options(SSGGP.force_general = TRUE)`; the Woodbury calculation in
+#'   `logLik()` needs `A`.
 #' @return A list with `c_vals` (`n` by `L`, sparse) and `A` (`nP` by `LP`,
 #'   sparse), the latter `NULL` when `need_A` is `FALSE`.
 #' @keywords internal
