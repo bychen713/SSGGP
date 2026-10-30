@@ -1,6 +1,6 @@
 # Sparse Spectral Graphical Gaussian Processes
 
-This repository contains an anonymized research release of the **SSGGP** R
+This repository contains a research release of the **SSGGP** R
 package and the scripts used for its simulation and MERRA-2 analyses. SSGGP
 fits and predicts highly multivariate Gaussian processes using random Fourier
 features, stochastic-approximation EM, and a graphical-lasso penalty for sparse
