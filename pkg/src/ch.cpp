@@ -20,7 +20,7 @@
 //' Tricomi's U on a vector
 //'
 //' Exposed for testing the covariance and spectral density against each other
-//' and against known values; not part of the modelling interface.
+//' and against known values; not part of the modeling interface.
 //'
 //' @param a,b Parameters of U.
 //' @param z Non-negative numeric vector.

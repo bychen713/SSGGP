@@ -16,13 +16,13 @@ matern_spectral(x, par)
 A single non-negative number, \eqn{f_j(x)}.
 }
 \description{
-The isotropic Matern spectral density on \eqn{\mathbb{R}^d}, normalised to
+The isotropic Matern spectral density on \eqn{\mathbb{R}^d}, normalized to
 integrate to one. Unit integral is required: the model puts every marginal
 scale in \eqn{\sigma}, so a spectral density carrying its own scale would
 make \eqn{\sigma} unidentifiable.
 }
 \details{
-The range is parameterised by \code{a}, the inverse range, so \code{a = 1/phi} for
+The range is parameterized by \code{a}, the inverse range, so \code{a = 1/phi} for
 the usual Matern range \code{phi}.
 }
 \examples{

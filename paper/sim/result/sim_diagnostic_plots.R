@@ -41,7 +41,7 @@
       alpha <- vapply(pars, `[[`, numeric(1), "alpha")
       nu <- vapply(pars, `[[`, numeric(1), "nu")
       # High-frequency tail under the package's beta^2 |omega|^2 / 2
-      # parameterisation.
+      # parameterization.
       out[, i] <- exp(log(marginal_variance) + nu * log(2) +
                         lgamma(alpha + nu) - lgamma(alpha) -
                         2 * nu * log(beta))

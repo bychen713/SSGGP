@@ -8,7 +8,7 @@
 #' Two generators are available and they are **not** interchangeable:
 #'
 #' * `"exact"` draws from the true covariance function by Cholesky
-#'   factorisation, so the data are not produced by the same random Fourier
+#'   factorization, so the data are not produced by the same random Fourier
 #'   feature approximation being fitted. Cost is \eqn{O(n^3p^3)}, and only some
 #'   families have a closed form (see below).
 #' * `"rff"` is the simulation algorithm of the paper: an `L`-term random Fourier
@@ -27,7 +27,7 @@
 #' a Matern density at the averaged smoothness and the same range. So for any
 #' \eqn{\nu_j} this **is** the model -- the parsimonious multivariate Matern of
 #' Gneiting, Kleiber and Schlather (2010) -- valid for every positive-definite
-#' \eqn{\sigma}, because the spectral matrix factorises as
+#' \eqn{\sigma}, because the spectral matrix factorizes as
 #' \eqn{D(x)\sigma D(x)} with \eqn{D=\mathrm{diag}(\sqrt{f_j})}.
 #'
 #' **Differing ranges.** As a function of \eqn{z=|x|^2} the product has
@@ -263,7 +263,7 @@ sim_exact_matern <- function(locs, sigma, f_par, n, P, d) {
   # whose Cholesky factor is chol(sigma) %x% chol(C). Since (A %x% B) vec(X) =
   # vec(B X t(A)), the draw needs only the two small factors -- n x n and P x P
   # instead of nP x nP -- and consumes the same rnorm(n * P) in the same order
-  # as the dense branch. Common a with DIFFERING nu no longer factorises and
+  # as the dense branch. Common a with DIFFERING nu no longer factorizes and
   # must fall through.
   if (common_a && common_nu) {
     C  <- fields::Matern(d = dist_mat, smoothness = nu[1], alpha = a[1])

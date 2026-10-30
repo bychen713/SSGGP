@@ -13,6 +13,13 @@ bash setup_env.sh --with-merra --with-iox
 GDAL, GEOS, PROJ, udunits, and netCDF unless your R already provides them), and
 `--with-iox` installs the bundled `spiox` for the IOX baseline.
 
+Please cite the MERRA-2 data as: Global Modeling and Assimilation Office [GMAO]
+(2015). MERRA-2 inst3_3d_aer_Nv: 3d, 3-Hourly, Instantaneous, Model-Level,
+Assimilation, Aerosol Mixing Ratio V5.12.4. Goddard Earth Sciences Data and
+Information Services Center (GES DISC), Greenbelt, MD, USA.
+[doi:10.5067/LTVB4GPCOTK2](https://doi.org/10.5067/LTVB4GPCOTK2).
+
+
 ## Layout
 
 ```text
@@ -60,4 +67,4 @@ Rscript MERRA/result/summarize.R        # after the jobs finish
 - `figure/correlation.png`: empirical residual correlation
 - `figure/precision_colocated_{sample,bic,dense}.png` (Figure 4): fold-median
   colocated precision matrices
-- `figure/data_maps.png`: raw and processed values for processes 1, 20, and 40
+- `figure/data_maps.png` (Figure 3): raw and processed values for processes 1, 20, and 40

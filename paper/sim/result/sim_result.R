@@ -77,7 +77,7 @@ summarize_results <- function() {
     if (!length(files_ind_exist))
       stop("no ind_*.RData files found in ", path,
            "; run sim/main/sim_ind.R for setting ", setting_name,
-           " or use sim_result_est.R to summarise the available SAEM fits")
+           " or use sim_result_est.R to summarize the available SAEM fits")
     
     # LMC files (lmcscov_*) are optional; without them the LMC columns are omitted.
     files_lmc_exist <- files_all[substr(files_all,1,4)=='lmcs']

@@ -20,7 +20,7 @@ Euclidean residual), and \code{sum} (a list of \code{mse}, \code{coverage}, \cod
 sum across processes).
 }
 \description{
-Summarises predictive performance against held-out truth, including for the
+Summarizes predictive performance against held-out truth, including for the
 sum across processes -- the quantity that only comes out right if the
 cross-process dependence is captured.
 }

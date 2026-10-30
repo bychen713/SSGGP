@@ -51,11 +51,8 @@ paper/
 └── slurm/                  Slurm launchers, mirroring the folders above
 ```
 
-`sim/lmc/lmc_model.R` and `MERRA/lmc/lmc_model.R` hold the same LMC
-implementation. Every R script can be run directly with `Rscript`; the `slurm/`
-launchers only add scheduler directives, array indexing, and job chaining.
-Adjust them for your cluster or pass options at submission
-(`sbatch -A ACCOUNT ...`). Slurm logs go directly to `sim/output/` or
+`MERRA/lmc/lmc_model.R` is `sim/lmc/lmc_model.R` without the simulation-only functions. Every R script can be run directly with `Rscript`; the `slurm/` launchers only add scheduler directives, array indexing, and job chaining.
+Adjust them for your cluster or pass options at submission (`sbatch -A ACCOUNT ...`). Slurm logs go directly to `sim/output/` or
 `MERRA/output/`; Slurm opens its log before the script starts, so that folder
 must exist before calling `sbatch` directly.
 

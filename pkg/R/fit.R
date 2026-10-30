@@ -20,7 +20,7 @@
 #'   [check_unit_integral()].
 #' @param g Importance-sampling proposal, from [matern_proposal()].
 #' @param rho Graphical LASSO penalty, passed to `glasso::glasso()` unchanged.
-#'   CM1 maximises
+#'   CM1 maximizes
 #'   \eqn{(L/2)[\log|Q| - \operatorname{tr}(\hat S Q)] - (L/2)\rho\|Q\|_1}
 #'   over the off-diagonal (or all of `Q` when `diag_pen = TRUE`), so the
 #'   penalty coefficient on the observed-data log-likelihood is
@@ -64,8 +64,8 @@
 #' @param run_until Optional iteration at which this call stops, for staged
 #'   runs; `iter` remains the overall target.
 #' @param tol Convergence tolerance on the change in the complete-data
-#'   penalised criterion between iterations.
-#' @param diag_pen Penalise the diagonal in the graphical LASSO.
+#'   penalized criterion between iterations.
+#' @param diag_pen Penalize the diagonal in the graphical LASSO.
 #' @param lower,upper Log-scale box constraints on the spectral parameters
 #'   \eqn{\iota_j}, in each family's `par_names` order -- `(a, nu)` for Matern.
 #'   A component with `lower == upper` is held fixed. `NULL` uses each family's
@@ -207,7 +207,7 @@ fit_impl <- function(Y, locs, f_par, f_fun, g, rho, nugget,
 
   if (!is.null(seed)) set.seed(seed)
 
-  # --- initialisation --------------------------------------------------------
+  # --- initialization --------------------------------------------------------
   BurnIn   <- if (is.null(burnin)) MC %/% 2 else burnin
   n_keep   <- MC - BurnIn
   complete <- rowSums(!observed) == 0
@@ -446,7 +446,7 @@ fit_impl <- function(Y, locs, f_par, f_fun, g, rho, nugget,
     chain$sigma_inv[, i] <-
       as.matrix(sigma_inv_est)[upper.tri(diag(P), diag = TRUE)]
 
-    # Complete-data penalised criterion at this iteration's (sigma, d, iota),
+    # Complete-data penalized criterion at this iteration's (sigma, d, iota),
     # up to constants. The W part is glasso's objective
     # (L/2)[log|Q| - tr(SQ) - rho ||Q||_1], with S re-formed at the updated
     # iota, plus -sum_l log|h(X_l)|; the Y part is the Gaussian log-density of

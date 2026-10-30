@@ -47,7 +47,7 @@ split_col_blocks <- function(A, L, P) {
 #' Masked column sums of squares of the feature matrix
 #'
 #' `out[p, l] = sum_{i observed for process p} c_vals[i, l]^2`, the misaligned
-#' generalisation of `colSums(c_vals^2)`: \eqn{A_\ell^\top D^{-1} A_\ell} is
+#' generalization of `colSums(c_vals^2)`: \eqn{A_\ell^\top D^{-1} A_\ell} is
 #' diagonal with entries `out[p, l] / d_p`. Computed in column blocks to avoid
 #' an `n` by `L` temporary.
 #'
@@ -72,7 +72,7 @@ masked_col_ss <- function(c_dense, observed, block = 4096L) {
 #' Run an expression under a thread cap
 #'
 #' Caps the BLAS and OpenMP thread counts, restoring them on exit. The
-#' environment variables reach libraries initialised later; `RhpcBLASctl`, when
+#' environment variables reach libraries initialized later; `RhpcBLASctl`, when
 #' installed, changes the running BLAS and OpenMP runtimes.
 #'
 #' @param n Thread cap, or `NULL` to leave every setting alone.

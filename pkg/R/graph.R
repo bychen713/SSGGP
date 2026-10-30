@@ -68,7 +68,7 @@ graph_metrics <- function(estimate, truth, tol = 0) {
 
 #' Prediction accuracy and calibration
 #'
-#' Summarises predictive performance against held-out truth, including for the
+#' Summarizes predictive performance against held-out truth, including for the
 #' sum across processes -- the quantity that only comes out right if the
 #' cross-process dependence is captured.
 #'

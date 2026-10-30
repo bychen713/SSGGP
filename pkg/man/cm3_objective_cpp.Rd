@@ -37,14 +37,14 @@ Unavailable for CH.}
 
 \item{log_cap}{Ceiling on \verb{log R}, \code{R = g/f}. Negative (the default) selects
 the plain form. Otherwise \code{gvals} is read as \verb{log g}, \code{b} as the
-ratio-scaled neighbour sum \verb{sum_k Q_jk u_l,jk sqrt(R_lk)}, and the
+ratio-scaled neighbor sum \verb{sum_k Q_jk u_l,jk sqrt(R_lk)}, and the
 objective is evaluated as
 \verb{Q_j = 1/2 sum log R - 1/4 sum (Qjj u R + 2 sqrt(R) b)},
 which never forms \code{1/f}. The dropped \verb{-1/2 sum log g} is constant in
 \code{iota}.}
 }
 \value{
-A list with \code{value}, the NEGATED \code{Q_j} that \code{optim} minimises
+A list with \code{value}, the NEGATED \code{Q_j} that \code{optim} minimizes
 (\code{NA_real_} for a rejected point), \code{grad} when asked, and \code{capped} under
 the ceiling.
 }

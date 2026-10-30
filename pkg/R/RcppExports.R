@@ -4,7 +4,7 @@
 #' Tricomi's U on a vector
 #'
 #' Exposed for testing the covariance and spectral density against each other
-#' and against known values; not part of the modelling interface.
+#' and against known values; not part of the modeling interface.
 #'
 #' @param a,b Parameters of U.
 #' @param z Non-negative numeric vector.
@@ -57,12 +57,12 @@ ch_spectral_cpp <- function(r, beta, nu, alpha, d, variance = 1.0) {
 #' @param nthread Threads for the CH density map.
 #' @param log_cap Ceiling on `log R`, `R = g/f`. Negative (the default) selects
 #'   the plain form. Otherwise `gvals` is read as `log g`, `b` as the
-#'   ratio-scaled neighbour sum `sum_k Q_jk u_l,jk sqrt(R_lk)`, and the
+#'   ratio-scaled neighbor sum `sum_k Q_jk u_l,jk sqrt(R_lk)`, and the
 #'   objective is evaluated as
 #'   `Q_j = 1/2 sum log R - 1/4 sum (Qjj u R + 2 sqrt(R) b)`,
 #'   which never forms `1/f`. The dropped `-1/2 sum log g` is constant in
 #'   `iota`.
-#' @return A list with `value`, the NEGATED `Q_j` that `optim` minimises
+#' @return A list with `value`, the NEGATED `Q_j` that `optim` minimizes
 #'   (`NA_real_` for a rejected point), `grad` when asked, and `capped` under
 #'   the ceiling.
 #' @keywords internal
@@ -101,7 +101,7 @@ ssggp_num_procs <- function() {
     .Call(`_SSGGP_ssggp_num_procs`)
 }
 
-#' Whether Eigen would parallelise its own dense products
+#' Whether Eigen would parallelize its own dense products
 #'
 #' Must be `FALSE`: Makevars.in defines `EIGEN_DONT_PARALLELIZE` so that the
 #' Gibbs kernels' dense products do not depend on the thread count.

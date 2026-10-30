@@ -16,6 +16,6 @@ U(a, b, z), elementwise.
 }
 \description{
 Exposed for testing the covariance and spectral density against each other
-and against known values; not part of the modelling interface.
+and against known values; not part of the modeling interface.
 }
 \keyword{internal}

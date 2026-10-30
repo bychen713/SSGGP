@@ -403,7 +403,7 @@ lmc_bounds <- function(families) {
        upper = c(unlist(lapply(families, lmc_upper)), log(10)))
 }
 
-# Minimise the LMC negative log-likelihood `nll` with L-BFGS-B, using optim()'s
+# Minimize the LMC negative log-likelihood `nll` with L-BFGS-B, using optim()'s
 # default controls (at most 100 iterations), and keep the run resumable: the
 # best parameters seen are written to `checkpoint_file` every `save_every`
 # seconds and when the run ends.

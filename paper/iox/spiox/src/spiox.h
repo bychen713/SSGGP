@@ -1,3 +1,6 @@
+// Modified from spiox 0.8.1 for the SSGGP repository (committed 2026-10-19).
+// See paper/iox/README.md and paper/iox/spiox.patch for the changes.
+
 #include "omp_import.h"
 #include "sparse_solvers.h"
 #include "daggp.h"

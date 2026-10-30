@@ -52,7 +52,7 @@ list of length \code{P} of names. Raw density functions must be registered with
 \item{g}{Importance-sampling proposal, from \code{\link[=matern_proposal]{matern_proposal()}}.}
 
 \item{rho}{Graphical LASSO penalty, passed to \code{glasso::glasso()} unchanged.
-CM1 maximises
+CM1 maximizes
 \eqn{(L/2)[\log|Q| - \operatorname{tr}(\hat S Q)] - (L/2)\rho\|Q\|_1}
 over the off-diagonal (or all of \code{Q} when \code{diag_pen = TRUE}), so the
 penalty coefficient on the observed-data log-likelihood is
@@ -82,9 +82,9 @@ described under Details.}
 \eqn{\gamma_1 = 1}.}
 
 \item{tol}{Convergence tolerance on the change in the complete-data
-penalised criterion between iterations.}
+penalized criterion between iterations.}
 
-\item{diag_pen}{Penalise the diagonal in the graphical LASSO.}
+\item{diag_pen}{Penalize the diagonal in the graphical LASSO.}
 
 \item{lower, upper}{Log-scale box constraints on the spectral parameters
 \eqn{\iota_j}, in each family's \code{par_names} order -- \verb{(a, nu)} for Matern.

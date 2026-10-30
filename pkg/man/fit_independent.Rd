@@ -52,7 +52,7 @@ inversion arises.}
 
 \item{threads}{Thread cap for the duration of the call; see \code{\link[=fit]{fit()}}.}
 
-\item{verbose}{Print optimiser progress.}
+\item{verbose}{Print optimizer progress.}
 }
 \value{
 An object of class \code{ssggp_independent}, shaped like an \code{\link[=fit]{fit()}}
@@ -70,11 +70,11 @@ comparison in the paper.
 }
 \details{
 Unlike \code{\link[=fit]{fit()}}, the likelihood is exact: the full \eqn{n\times n} covariance
-is formed and factorised per process, at \eqn{O(n^3)} each. Affordable
+is formed and factorized per process, at \eqn{O(n^3)} each. Affordable
 because the processes are independent, but it does not scale the way \code{\link[=fit]{fit()}}
 does.
 }
-\section{Two interfaces, one for each parameterisation}{
+\section{Two interfaces, one for each parameterization}{
 
 The legacy interface is Matern-only, with
 \verb{par_init = (1/variance, a, nu, nugget)} -- a PRECISION first and an INVERSE

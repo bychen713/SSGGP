@@ -54,7 +54,7 @@ index varying fastest).
 }
 \description{
 Draws \eqn{W \mid Y, \hat\theta} by Gibbs sampling at fresh random Fourier
-features and summarises the latent predictions
+features and summarizes the latent predictions
 \eqn{\hat Y(s_*) = L^{-1/2}\sum_\ell W_\ell \cos(\langle s_*, X_\ell\rangle +
 \psi_\ell)}. The mean and raw draws are for the latent process; the
 covariance and variance summaries are the sample covariance of the draws

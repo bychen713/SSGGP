@@ -19,7 +19,7 @@ set.seed(1)
 ## 1. Simulate
 # Zeros in sigma^-1 are the conditional independence graph. A tridiagonal
 # precision means each process is conditionally independent of all but its
-# neighbours.
+# neighbors.
 P <- 3
 Sigma_inv <- trimat(P, diag = 2, offdiag = 1)
 cat("true precision:\n"); print(Sigma_inv)

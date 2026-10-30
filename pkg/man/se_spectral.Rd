@@ -16,7 +16,7 @@ A single non-negative number, \eqn{f_j(x)}.
 }
 \description{
 The isotropic squared-exponential spectral density on \eqn{\mathbb{R}^d},
-normalised to integrate to one. It corresponds to the covariance
+normalized to integrate to one. It corresponds to the covariance
 \eqn{\sigma\exp(-\|h\|^2/(2\phi^2))}.
 }
 \details{

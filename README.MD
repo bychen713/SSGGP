@@ -64,5 +64,6 @@ R CMD check SSGGP_*.tar.gz --no-manual
 ## License
 
 The SSGGP package and the scripts in this repository are released under the
-[MIT License](LICENSE). The bundled `paper/iox/spiox` is spiox (GPL >= 2) and
-keeps its own license.
+[MIT License](LICENSE). `paper/iox/spiox` is a modified copy of spiox, which
+keeps its own license (GPL >= 2; see `paper/iox/spiox/COPYING`).
+

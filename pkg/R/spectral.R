@@ -1,11 +1,11 @@
 #' Matern spectral density
 #'
-#' The isotropic Matern spectral density on \eqn{\mathbb{R}^d}, normalised to
+#' The isotropic Matern spectral density on \eqn{\mathbb{R}^d}, normalized to
 #' integrate to one. Unit integral is required: the model puts every marginal
 #' scale in \eqn{\sigma}, so a spectral density carrying its own scale would
 #' make \eqn{\sigma} unidentifiable.
 #'
-#' The range is parameterised by `a`, the inverse range, so `a = 1/phi` for
+#' The range is parameterized by `a`, the inverse range, so `a = 1/phi` for
 #' the usual Matern range `phi`.
 #'
 #' @param x Numeric vector of length `d`: one frequency.
@@ -21,7 +21,7 @@ matern_spectral <- function(x, par) {
     (a^2 + sum(x^2))^(-nu - d / 2)
 }
 
-#' Vectorised spectral densities
+#' Vectorized spectral densities
 #'
 #' `f_vec(X, par)` over the whole `L` by `d` frequency matrix, returning `L`
 #' densities: the scalar function with `sum(x^2)` replaced by `rowSums(X^2)`.
@@ -88,7 +88,7 @@ matern_proposal <- function(a = 7, nu = 1.25) {
 #' Squared exponential spectral density
 #'
 #' The isotropic squared-exponential spectral density on \eqn{\mathbb{R}^d},
-#' normalised to integrate to one. It corresponds to the covariance
+#' normalized to integrate to one. It corresponds to the covariance
 #' \eqn{\sigma\exp(-\|h\|^2/(2\phi^2))}.
 #'
 #' As for [matern_spectral()], `a = 1/phi` is the inverse range.
@@ -143,7 +143,7 @@ se_proposal <- function(a = 5) {
 #' Confluent hypergeometric spectral density
 #'
 #' The isotropic Confluent Hypergeometric (CH) spectral density on
-#' \eqn{\mathbb{R}^d}, normalised to integrate to one:
+#' \eqn{\mathbb{R}^d}, normalized to integrate to one:
 #'
 #' \deqn{f(x) = \frac{\Gamma(\nu + d/2)\,\beta^d}{(2\pi)^{d/2} B(\alpha,\nu)}
 #'              \, U\!\left(\nu + \tfrac d2,\, 1-\alpha+\tfrac d2,\,
@@ -196,7 +196,7 @@ check_proposal <- function(g) {
 #' @param f_fun List of `P` spectral density functions, or one recycled to `P`.
 #' @param f_par List of `P` named parameter vectors, or one recycled to `P`.
 #' @param g Proposal object from [matern_proposal()].
-#' @param f_vec Optional list of `P` vectorised densities, `function(X, par)`;
+#' @param f_vec Optional list of `P` vectorized densities, `function(X, par)`;
 #'   `NULL` loops over `f_fun`.
 #' @param gvals Optional length-`L` proposal densities; `NULL` evaluates `g$d`.
 #' @param s_mat Optional `L` by `P` matrix of \eqn{\sqrt{f_j(X_\ell)}} at the

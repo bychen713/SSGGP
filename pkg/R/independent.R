@@ -6,11 +6,11 @@
 #' comparison in the paper.
 #'
 #' Unlike [fit()], the likelihood is exact: the full \eqn{n\times n} covariance
-#' is formed and factorised per process, at \eqn{O(n^3)} each. Affordable
+#' is formed and factorized per process, at \eqn{O(n^3)} each. Affordable
 #' because the processes are independent, but it does not scale the way [fit()]
 #' does.
 #'
-#' @section Two interfaces, one for each parameterisation:
+#' @section Two interfaces, one for each parameterization:
 #' The legacy interface is Matern-only, with
 #' `par_init = (1/variance, a, nu, nugget)` -- a PRECISION first and an INVERSE
 #' range second.
@@ -44,7 +44,7 @@
 #'   registry's `theta` order and `NULL` takes each family's own, so no
 #'   inversion arises.
 #' @param threads Thread cap for the duration of the call; see [fit()].
-#' @param verbose Print optimiser progress.
+#' @param verbose Print optimizer progress.
 #' @return An object of class `ssggp_independent`, shaped like an [fit()]
 #'   result so the two can be handled by the same code: `f_par` (a list of named
 #'   parameter vectors, one per process), `variance`, `nugget`, `sigma_inv`
@@ -217,7 +217,7 @@ family_cov <- function(entry, dist_mat, theta, nugget = TRUE) {
   cm
 }
 
-#' Exact univariate MLE for one process, in the registry parameterisation
+#' Exact univariate MLE for one process, in the registry parameterization
 #' @keywords internal
 #' @noRd
 univariate_mle_theta <- function(z, dist_mat, theta_ini, fixed, lower, upper,
@@ -287,7 +287,7 @@ univariate_mle <- function(z, dist_mat, par_init, fixed, lower, upper, d,
 
   nll <- function(lg) {
     th <- expand(lg)
-    # th[1] is a PRECISION, matching the original parameterisation
+    # th[1] is a PRECISION, matching the original parameterization
     cm <- matern_cov(dist_mat, a = th[2], nu = th[3], sigma = 1 / th[1],
                      nugget = th[4], d = d)
     val <- tryCatch({

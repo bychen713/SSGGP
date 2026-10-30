@@ -100,7 +100,7 @@ write_matrix_figures <- function(full, figure_dir) {
 
 # Figure 4: colocated sample precision and the BIC-selected and dense SAECM
 # estimates, each an entrywise median over folds, one image per matrix. Each
-# colour scale is linear and clipped at the 99th percentile of the matrix's
+# color scale is linear and clipped at the 99th percentile of the matrix's
 # absolute off-diagonal entries.
 write_precision_figures <- function(full, figure_dir) {
   out <- file.path(merra_output_base, "colocated", "ssggp")
@@ -138,7 +138,7 @@ write_precision_figures <- function(full, figure_dir) {
     graphics::axis(2, at = p - seq_len(p) + 1L, labels = labels, las = 2,
                    cex.axis = 1.08, tick = FALSE, line = -0.35, gap.axis = 0)
     graphics::box()
-    graphics::par(mar = c(8.2, 0.5, 1.5, 2.2), pty = "m")   # colour bar
+    graphics::par(mar = c(8.2, 0.5, 1.5, 2.2), pty = "m")   # color bar
     values <- seq(-limit, limit, length.out = length(palette))
     graphics::image(1, values, matrix(values, nrow = 1L), col = palette,
                     zlim = c(-limit, limit), axes = FALSE, xlab = "", ylab = "")
@@ -175,7 +175,7 @@ write_data_maps <- function(full, figure_dir) {
                      fill = if (raw) "kg/kg" else "Detrended\nlog ratio") +
       ggplot2::theme_bw(base_size = 17) +
       ggplot2::theme(panel.grid = ggplot2::element_blank(),
-                     # grey marks locations outside the fold in processed maps
+                     # gray marks locations outside the fold in processed maps
                      panel.background = ggplot2::element_rect(
                        fill = if (raw) "white" else "#B8B8B8", colour = NA),
                      axis.title = ggplot2::element_text(size = 16),

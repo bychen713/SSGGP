@@ -78,7 +78,7 @@ rho_vals <- c(0, 0.0003, 0.0006, 0.001, 0.003, 0.006, 0.012, 0.025, 0.05, 0.1)
 iter     <- 500           # maximum SAEM iterations
 cm_cycles <- 1L           # CM cycles per expensive E step
 tol      <- 1e-3          # convergence tolerance on the objective
-diag_pen <- FALSE         # whether to penalise the diagonal
+diag_pen <- FALSE         # whether to penalize the diagonal
 nugget_type <- "shared"   # "shared" or "by_process"
 use_independent_init <- TRUE
 

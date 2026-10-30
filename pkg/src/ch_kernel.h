@@ -13,7 +13,7 @@
 #include <gsl/gsl_errno.h>
 
 // GSL's default error handler calls abort(), which would take the R session
-// down the first time the optimiser probes an awkward parameter.
+// down the first time the optimizer probes an awkward parameter.
 inline void ssggp_gsl_handler_off() {
   static bool done = false;
   if (!done) { gsl_set_error_handler_off(); done = true; }

@@ -25,6 +25,8 @@ changes (`spiox.patch`):
    used here does not, so the results are unaffected.
 4. The version is set to 0.8.1.9001, to tell the bundled copy apart from
    upstream 0.8.1.
+5. A comment noting these modifications is added at the top of `src/spiox.cpp`
+   and `src/spiox.h`. `spiox.patch` does not include it.
 
 Install it with `bash setup_env.sh --with-iox` from the repository root. Both
 IOX runners stop unless exactly version 0.8.1.9001 is installed.

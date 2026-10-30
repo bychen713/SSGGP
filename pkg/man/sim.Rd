@@ -62,7 +62,7 @@ Draws from a multivariate Gaussian process whose spectral density is
 Two generators are available and they are \strong{not} interchangeable:
 \itemize{
 \item \code{"exact"} draws from the true covariance function by Cholesky
-factorisation, so the data are not produced by the same random Fourier
+factorization, so the data are not produced by the same random Fourier
 feature approximation being fitted. Cost is \eqn{O(n^3p^3)}, and only some
 families have a closed form (see below).
 \item \code{"rff"} is the simulation algorithm of the paper: an \code{L}-term random Fourier
@@ -83,7 +83,7 @@ It needs a closed form for
 a Matern density at the averaged smoothness and the same range. So for any
 \eqn{\nu_j} this \strong{is} the model -- the parsimonious multivariate Matern of
 Gneiting, Kleiber and Schlather (2010) -- valid for every positive-definite
-\eqn{\sigma}, because the spectral matrix factorises as
+\eqn{\sigma}, because the spectral matrix factorizes as
 \eqn{D(x)\sigma D(x)} with \eqn{D=\mathrm{diag}(\sqrt{f_j})}.
 
 \strong{Differing ranges.} As a function of \eqn{z=|x|^2} the product has

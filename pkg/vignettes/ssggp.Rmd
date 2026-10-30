@@ -42,7 +42,7 @@ Note `a` is the **inverse** range: `a = 1/phi` for the usual Matérn range.
 ## Simulating
 
 `trimat()` builds a tridiagonal precision — each process conditionally
-independent of all but its neighbours.
+independent of all but its neighbors.
 
 ```{r sim}
 P <- 3
@@ -58,7 +58,7 @@ dim(out$Y)
 
 There are two generators and they are **not** interchangeable.
 
-* `method = "exact"` factorises the true covariance, so the data do not come
+* `method = "exact"` factorizes the true covariance, so the data do not come
   from the approximation being fitted. It covers Matérn and the squared
   exponential; for Matérn with unequal ranges it **warns**, because the
   $(a_j+a_k)/2$ cross-covariance it then uses is not the model.
@@ -147,7 +147,7 @@ fit_independent(out$Y, out$locs, par_init = c(1, 2, 1, 0.07))
 ```
 
 Each process fitted alone, so $\boldsymbol\sigma$ is diagonal by construction.
-This is the reference for asking whether joint modelling buys anything — theory
+This is the reference for asking whether joint modeling buys anything — theory
 suggests it may not for colocated data, but should when observations are
 misaligned.
 
@@ -155,7 +155,7 @@ misaligned.
 
 `f_fun` accepts a registered name, a raw density function, or a list of length
 `p` mixing the two. A raw function is enough for simulation and prediction, but
-estimation needs the parameter names and the box CM3 optimises in:
+estimation needs the parameter names and the box CM3 optimizes in:
 
 ```{r registry}
 list_spectral()
@@ -219,7 +219,7 @@ like Matérn's and only one behaves like it:
   $\|h\|^{-2\alpha}$ rather than exponentially. That is the point of the
   family: Matérn's exponential tail can decay too fast for data-sparse
   problems.
-- $\beta$ is a range, and unlike Matérn and squared exponential it is parameterised
+- $\beta$ is a range, and unlike Matérn and squared exponential it is parameterized
   **directly** rather than as an inverse range, matching the paper.
 
 ```{r ch, eval = FALSE}

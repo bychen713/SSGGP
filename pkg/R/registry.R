@@ -1,7 +1,7 @@
 ## Spectral family registry ------------------------------------------------
 ##
-## Maps a NAME to a spectral density, its vectorised form and the box CM3
-## optimises in, plus -- for the independent baseline in independent.R -- a
+## Maps a NAME to a spectral density, its vectorized form and the box CM3
+## optimizes in, plus -- for the independent baseline in independent.R -- a
 ## covariance function and the map between the spectral parameters and the
 ## baseline's parameter vector.
 ##
@@ -29,7 +29,7 @@
 #'   non-negative number. **Must integrate to one** over \eqn{\mathbb{R}^d};
 #'   see [check_unit_integral()].
 #' @param par_names Character vector of spectral parameter names.
-#' @param f_vec Optional vectorised form, `function(X, par)` taking the `L` by
+#' @param f_vec Optional vectorized form, `function(X, par)` taking the `L` by
 #'   `d` matrix of frequencies and returning `L` densities. Strongly
 #'   recommended, since CM3 evaluates the density at every frequency for every
 #'   trial point; without it `f` is looped over.
@@ -186,7 +186,7 @@ require_spectral_estimable <- function(entries) {
   invisible(TRUE)
 }
 
-#' The vectorised density for one entry, looping over `f` if there is none
+#' The vectorized density for one entry, looping over `f` if there is none
 #'
 #' @param e A resolved registry entry.
 #' @return A function of `(X, par)` returning a length-`nrow(X)` vector.
@@ -204,7 +204,7 @@ f_vec_of <- function(e) {
 ##
 ## The built-in families have a fused objective in cm3.cpp. Dispatch is by
 ## name, but `register_spectral(overwrite = TRUE)` can rebind a built-in name,
-## so the entry must also still carry the built-in vectorised density and
+## so the entry must also still carry the built-in vectorized density and
 ## parameter order.
 .cm3_compiled <- list(
   matern   = list(id = 0L, par_names = c("a", "nu"),           grad = TRUE),
@@ -301,7 +301,7 @@ log_density_of <- function(e) {
     theta_upper = log(c(100, 1, 100)),
     overwrite   = TRUE)
 
-  # CH is parameterised by the range beta itself, not an inverse range. The
+  # CH is parameterized by the range beta itself, not an inverse range. The
   # alpha floor is the model's alpha > d/2, assuming d = 2.
   register_spectral(
     name        = "ch",

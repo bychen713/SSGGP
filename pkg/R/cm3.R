@@ -15,7 +15,7 @@
 ## with b_lj = sum_{k != j} Q_jk u_l,jk / s_lk, which does not involve iota_j
 ## and so is formed once per coordinate; each objective evaluation is then O(L).
 ##
-## The sweep is sequential: b_lj reads s_lk for the neighbours k of j, so
+## The sweep is sequential: b_lj reads s_lk for the neighbors k of j, so
 ## coordinate j uses the values coordinates 1..j-1 have just produced.
 
 #' Evaluate and validate a spectral density
@@ -148,13 +148,13 @@ q_iota_logdet <- function(S_mat, log_gvals = NULL) {
 
 #' One sequential coordinate-ECM sweep over the spatial parameters
 #'
-#' Cycles `j = 1, ..., P`, maximising `Q_j` over `iota_j` with the other
+#' Cycles `j = 1, ..., P`, maximizing `Q_j` over `iota_j` with the other
 #' coordinates held at their current values -- including the values produced
 #' earlier in this same sweep.
 #'
 #' @param f_par List of `P` named parameter vectors, the current \eqn{\iota}.
 #' @param fam List of `P` resolved registry entries.
-#' @param f_vec List of `P` vectorised densities, from `f_vec_of()`.
+#' @param f_vec List of `P` vectorized densities, from `f_vec_of()`.
 #' @param Xmat `L` by `d` matrix of frequencies.
 #' @param gvals Length-`L` proposal densities.
 #' @param Q `P` by `P` precision, from CM1.
@@ -163,7 +163,7 @@ q_iota_logdet <- function(S_mat, log_gvals = NULL) {
 #' @param bounds List of `P` `list(lower =, upper =)` on the log scale.
 #' @param S_mat `L` by `P` current \eqn{\sqrt{f_j(X_\ell)}} (or
 #'   \eqn{\sqrt{R_{\ell j}}} under the ceiling), refreshed as the sweep goes.
-#' @param maxit Optimiser iterations per coordinate.
+#' @param maxit Optimizer iterations per coordinate.
 #' @param verbose Print the optimizer trace.
 #' @param r2 Squared frequency norms `rowSums(Xmat^2)`; `NULL` recomputes them.
 #' @param gradient Supply `optim()` with the analytic gradient of `Q_j` where
@@ -199,7 +199,7 @@ cm3_sweep <- function(f_par, fam, f_vec, Xmat, gvals, Q, u, tri, bounds,
     kern      <- cm3_kernel_of(fam[[j]])
     use_grad  <- gradient && !is.null(kern) && kern$grad
 
-    # Neighbour sum b_lj = sum_k Q_jk u_l,jk / s_lk, formed once per
+    # Neighbor sum b_lj = sum_k Q_jk u_l,jk / s_lk, formed once per
     # coordinate. Under the ceiling it is sum_k Q_jk u_l,jk sqrt(R_lk).
     nb <- which(Q[j, ] != 0)
     nb <- nb[nb != j]
@@ -261,7 +261,7 @@ cm3_sweep <- function(f_par, fam, f_vec, Xmat, gvals, Q, u, tri, bounds,
       }
     }
 
-    if (!any(free)) {                 # nothing to optimise
+    if (!any(free)) {                 # nothing to optimize
       new <- exp(full_start)
       names(new) <- par_names
       f_par[[j]][par_names] <- new

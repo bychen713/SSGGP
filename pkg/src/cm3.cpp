@@ -1,13 +1,13 @@
 // Fused CM3 objective, and the graphical-lasso statistic contraction.
 //
-// CM3 maximises, for one coordinate j at a time,
+// CM3 maximizes, for one coordinate j at a time,
 //
 //   Q_j(iota_j) = - sum_l log s_lj
 //                 - (1/4) sum_l g_l [ Q_jj u_l,jj / s_lj^2 + 2 b_lj / s_lj ]
 //
 // with s_lj = sqrt(f_j(X_l)) and b_lj = sum_{k != j} Q_jk u_l,jk / s_lk. The
-// optimiser needs only the sums, so they are accumulated in one pass without
-// materialising the density. Sums use long double, as R's sum() does.
+// optimizer needs only the sums, so they are accumulated in one pass without
+// materializing the density. Sums use long double, as R's sum() does.
 //
 // A trial point is rejected (value NA, which the R side maps to a large
 // constant) when any f is non-finite or non-positive, or the objective is not
@@ -79,12 +79,12 @@ static std::vector<double> ch_density_map(const NumericVector& r2, double pref,
 //' @param nthread Threads for the CH density map.
 //' @param log_cap Ceiling on `log R`, `R = g/f`. Negative (the default) selects
 //'   the plain form. Otherwise `gvals` is read as `log g`, `b` as the
-//'   ratio-scaled neighbour sum `sum_k Q_jk u_l,jk sqrt(R_lk)`, and the
+//'   ratio-scaled neighbor sum `sum_k Q_jk u_l,jk sqrt(R_lk)`, and the
 //'   objective is evaluated as
 //'   `Q_j = 1/2 sum log R - 1/4 sum (Qjj u R + 2 sqrt(R) b)`,
 //'   which never forms `1/f`. The dropped `-1/2 sum log g` is constant in
 //'   `iota`.
-//' @return A list with `value`, the NEGATED `Q_j` that `optim` minimises
+//' @return A list with `value`, the NEGATED `Q_j` that `optim` minimizes
 //'   (`NA_real_` for a rejected point), `grad` when asked, and `capped` under
 //'   the ceiling.
 //' @keywords internal
@@ -297,7 +297,7 @@ int ssggp_num_procs() {
 #endif
 }
 
-//' Whether Eigen would parallelise its own dense products
+//' Whether Eigen would parallelize its own dense products
 //'
 //' Must be `FALSE`: Makevars.in defines `EIGEN_DONT_PARALLELIZE` so that the
 //' Gibbs kernels' dense products do not depend on the thread count.

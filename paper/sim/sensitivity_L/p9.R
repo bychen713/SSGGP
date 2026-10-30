@@ -140,7 +140,7 @@ separable_loglik <- function(Y, spatial_cov, process_eigen) {
 direct_loglik <- function(K, Y) {
   diag(K) <- diag(K) + nugget
   ## Both covariance builders fill a symmetric matrix exactly.  Avoid making
-  ## several additional np-by-np copies merely to symmetrise it again.
+  ## several additional np-by-np copies merely to symmetrize it again.
   U <- chol(K)
   y <- as.vector(Y)
   -0.5 * length(y) * log(2 * pi) - sum(log(diag(U))) -

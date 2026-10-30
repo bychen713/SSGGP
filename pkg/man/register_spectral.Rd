@@ -29,7 +29,7 @@ see \code{\link[=check_unit_integral]{check_unit_integral()}}.}
 
 \item{par_names}{Character vector of spectral parameter names.}
 
-\item{f_vec}{Optional vectorised form, \verb{function(X, par)} taking the \code{L} by
+\item{f_vec}{Optional vectorized form, \verb{function(X, par)} taking the \code{L} by
 \code{d} matrix of frequencies and returning \code{L} densities. Strongly
 recommended, since CM3 evaluates the density at every frequency for every
 trial point; without it \code{f} is looped over.}

@@ -6,7 +6,7 @@
 \alias{SSGGP-package}
 \title{SSGGP: Sparse Spectral Graphical Gaussian Processes}
 \description{
-Penalized likelihood inference for highly-multivariate Gaussian processes via random Fourier features and sparse spectral graphical modelling. Provides simulation, estimation and prediction for a model in which process-level conditional independence is encoded as zeros in the inverse cross-spectral density. Estimation uses a stochastic approximation EM algorithm with a graphical LASSO penalty, with a coordinate-wise expectation/conditional-maximization update for the process-specific spectral parameters.
+Penalized likelihood inference for highly-multivariate Gaussian processes via random Fourier features and sparse spectral graphical modeling. Provides simulation, estimation and prediction for a model in which process-level conditional independence is encoded as zeros in the inverse cross-spectral density. Estimation uses a stochastic approximation EM algorithm with a graphical LASSO penalty, with a coordinate-wise expectation/conditional-maximization update for the process-specific spectral parameters.
 }
 \author{
 \strong{Maintainer}: Bo-yu Chen \email{alex.boyu.c@gmail.com}

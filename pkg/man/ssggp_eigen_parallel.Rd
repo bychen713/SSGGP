@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{ssggp_eigen_parallel}
 \alias{ssggp_eigen_parallel}
-\title{Whether Eigen would parallelise its own dense products}
+\title{Whether Eigen would parallelize its own dense products}
 \usage{
 ssggp_eigen_parallel()
 }

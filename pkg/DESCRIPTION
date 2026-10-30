@@ -3,10 +3,11 @@ Title: Sparse Spectral Graphical Gaussian Processes
 Version: 0.0.0.9000
 Authors@R: c(
     person("Bo-yu", "Chen", email = "alex.boyu.c@gmail.com",
-           role = c("aut", "cre")))
+           role = c("aut", "cre"))
+           )
 Description: Penalized likelihood inference for highly-multivariate Gaussian
     processes via random Fourier features and sparse spectral graphical
-    modelling. Provides simulation, estimation and prediction for a model in
+    modeling. Provides simulation, estimation and prediction for a model in
     which process-level conditional independence is encoded as zeros in the
     inverse cross-spectral density. Estimation uses a stochastic approximation
     EM algorithm with a graphical LASSO penalty, with a coordinate-wise

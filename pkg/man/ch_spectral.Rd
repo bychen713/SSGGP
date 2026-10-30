@@ -17,7 +17,7 @@ A single non-negative number, \eqn{f_j(x)}.
 }
 \description{
 The isotropic Confluent Hypergeometric (CH) spectral density on
-\eqn{\mathbb{R}^d}, normalised to integrate to one:
+\eqn{\mathbb{R}^d}, normalized to integrate to one:
 }
 \details{
 \deqn{f(x) = \frac{\Gamma(\nu + d/2)\,\beta^d}{(2\pi)^{d/2} B(\alpha,\nu)}
