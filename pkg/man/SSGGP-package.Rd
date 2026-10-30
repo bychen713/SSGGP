@@ -9,11 +9,11 @@
 Penalized likelihood inference for highly-multivariate Gaussian processes via random Fourier features and sparse spectral graphical modelling. Provides simulation, estimation and prediction for a model in which process-level conditional independence is encoded as zeros in the inverse cross-spectral density. Estimation uses a stochastic approximation EM algorithm with a graphical LASSO penalty, with a coordinate-wise expectation/conditional-maximization update for the process-specific spectral parameters.
 }
 \author{
-\strong{Maintainer}: Anonymous Authors \email{anonymous@example.invalid}
+\strong{Maintainer}: Bo-yu Chen \email{alex.boyu.c@gmail.com}
 
 Authors:
 \itemize{
-  \item Anonymous Authors \email{anonymous@example.invalid}
+  \item Bo-yu Chen \email{alex.boyu.c@gmail.com}
 }
 
 }

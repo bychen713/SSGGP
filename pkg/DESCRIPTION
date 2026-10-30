@@ -2,7 +2,7 @@ Package: SSGGP
 Title: Sparse Spectral Graphical Gaussian Processes
 Version: 0.0.0.9000
 Authors@R: c(
-    person("Anonymous", "Authors", email = "anonymous@example.invalid",
+    person("Bo-yu", "Chen", email = "alex.boyu.c@gmail.com",
            role = c("aut", "cre")))
 Description: Penalized likelihood inference for highly-multivariate Gaussian
     processes via random Fourier features and sparse spectral graphical
