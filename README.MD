@@ -1,4 +1,4 @@
-# Sparse Spectral Graphical Gaussian Processes
+# SSGGP: Sparse Spectral Graphical Gaussian Processes
 
 This repository contains a research release of the **SSGGP** R
 package and the scripts used for its simulation and MERRA-2 analyses. SSGGP
