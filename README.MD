@@ -78,6 +78,6 @@ Chen, B.-Y., Yarger, D., and Bhadra, A. (2026). Penalized Likelihood Inference i
   author={Bo-yu Chen and Drew Yarger and Anindya Bhadra},
   journal={arXiv preprint arXiv:2611.00467},
   year={2026},
-  url={https://arxiv.org}
+  url={https://arxiv.org/abs/2611.00467}
 }
 ```
