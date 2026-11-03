@@ -67,3 +67,17 @@ The SSGGP package and the scripts in this repository are released under the
 [MIT License](LICENSE). `paper/iox/spiox` is a modified copy of spiox, which
 keeps its own license (GPL >= 2; see `paper/iox/spiox/COPYING`).
 
+## Reference
+
+Chen, B.-Y., Yarger, D., and Bhadra, A. (2026). Penalized Likelihood Inference in Highly Multivariate Sparse Spectral
+  Graphical Gaussian Processes. [arXiv:2611.00467](https://arxiv.org/abs/2611.00467).
+
+```
+@article{chen2026penalized,
+  title={Penalized Likelihood Inference in Highly Multivariate Sparse Spectral Graphical Gaussian Processes}, 
+  author={Bo-yu Chen and Drew Yarger and Anindya Bhadra},
+  journal={arXiv preprint arXiv:2611.00467},
+  year={2026},
+  url={https://arxiv.org}
+}
+```
